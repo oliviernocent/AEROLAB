@@ -11,3 +11,4 @@ credentials.py
 ehthumbs.db
 Thumbs.db
 *.pyc
+*.png

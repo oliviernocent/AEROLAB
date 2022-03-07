@@ -54,7 +54,7 @@ while df.loc[i, 'Timestamp'] < end:
 
     for pollutant in pollutants:
         if pollutant in df.columns:
-            mean_value = df_24h[pollutant].mean()
+            mean_value = df_24h[pollutant].median()
             if mean_value > max_value[pollutant]:
                 max_value[pollutant] = mean_value
                 max_index[pollutant] = i
