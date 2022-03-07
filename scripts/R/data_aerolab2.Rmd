@@ -1,0 +1,1799 @@
+---
+title: "Rapport mesure de polluant sur l'Ultra Trail scientifique de Clécy"
+author: "Quentin Martinet"
+date: "25/11/2021"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, eval=FALSE, include=FALSE}
+rmarkdown::render("reportGlobal.Rmd", "html_document")
+
+rmarkdown::render("reportGlobal.Rmd", "html_document", encoding = "UTF-8")
+
+rmarkdown::render("reportGlobal.Rmd", "html_document", encoding = "UTF-8", quiet = TRUE)
+
+rmarkdown::render("reportGlobal.Rmd", "word_document", encoding = "UTF-8", quiet = TRUE)
+
+rmarkdown::render("reportGlobal.Rmd", "pdf_document", encoding = "UTF-8", quiet = TRUE)
+
+```
+
+```{r library,echo=FALSE,message=FALSE}
+require(ggplot2)
+require(plyr)
+require(car)
+library(scales)
+library(multcomp)
+library(nlme)
+library(cowplot)
+library(emmeans)
+library(cowplot)
+library(Rmisc)
+library(plotly)
+library(dplyr)
+library(lubridate)
+library(DT)
+library(ggridges)
+library(ggpubr)
+library(ggh4x)
+library(ggalt)
+library(waffle)
+library(ggdist)
+library(ggforce)
+library(ggtext)
+library(summariser)
+library(skimr)
+library(plotly)
+```
+
+
+# Protocol and variables
+
+
+## Protocol
+
+
+
+## Variables
+
+- Numero du capteur
+    Capteur 1 : station centre Km 0
+    capteur 2 : station poste de secours Km 14
+- Date
+- Periode
+    Jour étant du lever au coucher du soleil
+    Nuit étant du coucher au lever du soleil
+- Heure
+- Seconde
+-Conditions
+  - Température (°C)
+  - Humidité (%RH)
+  - Pression (hPa)
+- Mesures de gaz (ppm)
+  - P1
+  - CO
+  - 03
+  - NO
+- Mesures de particules (en µg/mol3)
+  - PM1
+  - PM2.5
+  - PM10
+- Temps en seconde depuis le démarrage de l'acquisition (redemarre à 0 à chaque démarrage/mise sous tension)
+  - UPT
+    
+
+### independant
+
+* To be completed
+
+
+
+# DATA
+
+```{r donnees, echo=FALSE}
+#donnees <- read.table( file = "ANGII-csv.csv", dec = ',', sep = ';', head = TRUE )
+#setwd("/home/philippe/recherche/PMM/2021/2726-Gerasimos/")
+donnees <- read.table( file = "../../data/2021-11-11/DATA.csv", dec = '.', sep = ',', head = TRUE )
+# option pour l'anova
+options(contrasts=c("contr.sum","contr.poly"))
+
+#donnees$Box=as.factor(donnees$Box)
+
+#dataNuit <- subset( donnees, donnees$activity == "Night" )
+#dataJour <- subset( donnees, donnees$activity == "Day" )
+
+#dataJ1 <- subset( donnees, donnees$day == "D1" )
+#dataJ2 <- subset( donnees, donnees$day == "D2" )
+#dataJ3 <- subset( donnees, donnees$day == "D3" )
+
+
+DT::datatable(
+  donnees,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+```
+
+```{r explore, echo=FALSE,eval=FALSE}
+library(DataExplorer)
+create_report(donnees)
+
+library(dataMaid)
+makeCodebook(donnees)
+
+```
+
+
+# Graphique par jour
+## Temperature
+
+```{r valeurs_Temperature}
+
+skim(donnees$Temperature)
+summary(donnees$Temperature)
+
+
+val0=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Temperature",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Temperature",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Temperature",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Temperature",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+#FIGURE TYPE TEMPERATURE
+```{rfigure_temperature}
+
+
+FigT= ggplot(data=donnees, aes(y = Temperature, x = TimeNumeric, color = Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   scale_x_continuous(n.breaks = 5,) +
+                      #limits = c(0, 24)) +
+   geom_hline(yintercept = 0, lty = "dotted") +
+   
+  facet_grid(. ~ Date) +
+  labs(y = " Temperature (°C)\n",
+       x = "\nHeure",
+       title = "\nEvolution de la température en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+
+#ggplotly(FigH)
+
+```
+
+
+
+## Humidity
+```{r valeurs_Humidity}
+
+skim(donnees$Humidity)
+summary(donnees$Humidity)
+
+
+val0=summarySE(data=donnees,measurevar = "Humidity",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "Humidity",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "Humidity",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "Humidity",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Humidity",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Humidity",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Humidity",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Humidity",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Humidity",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Humidity",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Humidity",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Humidity",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+#FIGURE TYPE HUMIDITY
+```{rfigure-humidity}
+library(ggh4x)
+
+FigH= ggplot(data=donnees, aes(y = Humidity, x = TimeNumeric, color = Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   scale_x_continuous(n.breaks = 5,) +
+                      #limits = c(0, 24)) +
+   geom_hline(yintercept = 0, lty = "dotted") +
+  
+  facet_grid(. ~ Date) +
+  labs(y = " Humidity (%HR)\n",
+       x = "\nHeure",
+       title = "\nEvolution de l'humidité en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigH)
+
+
+#ggplotly(FigH)
+
+```
+
+
+## Pressure
+```{r valeurs_Pressure}
+
+skim(donnees$Pressure)
+summary(donnees$Pressure)
+
+
+val0=summarySE(data=donnees,measurevar = "Pressure",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "Pressure",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "Pressure",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "Pressure",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Pressure",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Pressure",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Pressure",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Pressure",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Pressure",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Pressure",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Pressure",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Pressure",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+#FIGURE TYPE PRESSURE
+```{rfigure_Pressure}
+library(ggh4x)
+
+FigP= ggplot(data=donnees, aes(y = Pressure, x = TimeNumeric, color = Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   scale_x_continuous(n.breaks = 5,) +
+                      #limits = c(0, 24)) +
+   geom_hline(yintercept = 0, lty = "dotted") +
+ 
+  facet_grid(. ~ Date) +
+  labs(y = " Pression (hPa)\n",
+       x = "\nHeure",
+       title = "\nEvolution de la pression en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigP)
+
+
+#ggplotly(FigP)
+
+```
+
+
+
+## NO2
+```{r valeurs_NO2}
+
+skim(donnees$NO2)
+summary(donnees$NO2)
+
+
+val0=summarySE(data=donnees,measurevar = "NO2",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "NO2",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "NO2",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "NO2",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "NO2",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "NO2",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+#FIGURE TYPE NO2
+```{rfigure_NO2}
+library(ggh4x)
+
+FigNO2= ggplot(data=donnees, aes(y = NO2, x = TimeNumeric, color = Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   scale_x_continuous(n.breaks = 5,) +
+                      #limits = c(0, 24)) +
+   geom_hline(yintercept = 0, lty = "dotted") +
+ 
+  facet_grid(. ~ Date) +
+  labs(y = " NO2 (ppm)\n",
+       x = "\nHeure",
+       title = "\nEvolution de la concentration de NO2 en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigNO2)
+
+
+#ggplotly(FigNO2)
+
+```
+
+
+
+## CO
+```{r valeurs_CO}
+
+skim(donnees$CO)
+summary(donnees$CO)
+
+
+val0=summarySE(data=donnees,measurevar = "CO",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "CO",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "CO",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "CO",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "CO",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "CO",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+#FIGURE TYPE CO
+```{rfigure_CO}
+library(ggh4x)
+
+FigCO= ggplot(data=donnees, aes(y = CO, x = TimeNumeric, color = Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   scale_x_continuous(n.breaks = 5,) +
+                      #limits = c(0, 24)) +
+   geom_hline(yintercept = 0, lty = "dotted") +
+  
+  facet_grid(. ~ Date) +
+  labs(y = " CO (ppm)\n",
+       x = "\nHeure",
+       title = "\nEvolution de la concentration de CO en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigCO)
+
+
+#ggplotly(FigCO)
+
+```
+
+
+## O3
+```{r valeurs_O3}
+
+skim(donnees$O3)
+summary(donnees$O3)
+
+
+val0=summarySE(data=donnees,measurevar = "O3",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillO3ntainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "O3",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "O3",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "O3",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "O3",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "O3",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillO3ntainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillO3ntainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillO3ntainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillO3ntainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillO3ntainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+#FIGURE TYPE O3
+```{rfigure_O3}
+library(ggh4x)
+
+FigO3= ggplot(data=donnees, aes(y = O3, x = Time, color = Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   scale_x_continuous(n.breaks = 5,) +
+                      #limits = c(0, 24)) +
+   geom_hline(yintercept = 0, lty = "dotted") +
+  
+  facet_grid(. ~ Date) +
+  labs(y = " O3 (ppm)\n",
+       x = "\nHeure",
+       title = "\nEvolution de la concentration de O3 en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(Fig03)
+
+
+#ggplotly(FigO3)
+
+```
+
+
+
+
+## NO
+```{r valeurs_NO}
+
+skim(donnees$NO)
+summary(donnees$NO)
+
+
+val0=summarySE(data=donnees,measurevar = "NO",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "NO",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "NO",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "NO",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "NO",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "NO",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+#FIGURE TYPE NO
+```{rfigure_NO}
+library(ggh4x)
+
+FigNO= ggplot(data=donnees, aes(y = NO, x = TimeNumeric, color = Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   scale_x_continuous(n.breaks = 5,) +
+                      #limits = c(0, 24)) +
+   geom_hline(yintercept = 0, lty = "dotted") +
+  
+  facet_grid(. ~ Date) +
+  labs(y = " NO (ppm)\n",
+       x = "\nHeure",
+       title = "\nEvolution de la concentration de NO en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigNO)
+
+
+#ggplotly(FigNO)
+
+```
+
+
+## P1
+```{r valeurs_P1}
+
+skim(donnees$P1)
+summary(donnees$P1)
+
+
+val0=summarySE(data=donnees,measurevar = "P1",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "P1",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "P1",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "P1",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "P1",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "P1",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+#FIGURE TYPE P1
+```{rfigure_P1}
+library(ggh4x)
+
+FigP1= ggplot(data=donnees, aes(y = P1, x = TimeNumeric, color = Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   scale_x_continuous(n.breaks = 5,) +
+                      #limits = c(0, 24)) +
+   geom_hline(yintercept = 0, lty = "dotted") +
+   
+  facet_grid(. ~ Date) +
+  labs(y = " PM1 (µg/mol3)\n",
+       x = "\nHeure",
+       title = "\nEvolution de la concentration de PM1 en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigP1)
+
+
+#ggplotly(FigP1)
+
+```
+
+
+## P25
+```{r valeurs_P25}
+
+skim(donnees$P25)
+summary(donnees$P25)
+
+
+val0=summarySE(data=donnees,measurevar = "P25",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "P25",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "P25",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "P25",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "P25",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "P25",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+#FIGURE TYPE P25
+```{rfigure_P25}
+library(ggh4x)
+
+FigP25= ggplot(data=donnees, aes(y = P25, x = TimeNumeric, color = Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   scale_x_continuous(n.breaks = 5,) +
+                      #limits = c(0, 24)) +
+   geom_hline(yintercept = 0, lty = "dotted") +
+   
+  facet_grid(. ~ Date) +
+  labs(y = " PM2.5 (µg/mol3)\n",
+       x = "\nHeure",
+       title = "\nEvolution de la concentration de PM2.5 en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigP25)
+
+
+#ggplotly(FigP25)
+
+```
+
+
+
+## P10
+```{r valeurs_P10}
+
+skim(donnees$P10)
+summary(donnees$P10)
+
+
+val0=summarySE(data=donnees,measurevar = "P10",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "P10",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "P10",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "P10",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "P10",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "P10",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10",groupvars = c("Temperature"), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10",groupvars = c("Pressure"), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+#FIGURE TYPE P10
+```{rfigure_P10}
+library(ggh4x)
+
+FigP10= ggplot(data=donnees, aes(y = P10, x = TimeNumeric, color = Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   scale_x_continuous(n.breaks = 5,) +
+                      #limits = c(0, 24)) +
+   geom_hline(yintercept = 1, lty = "dotted") +
+   
+  facet_grid(. ~ Date) +
+  labs(y = " PM10 (µg/mol3)\n",
+       x = "\nHeure",
+       title = "\nEvolution de la concentration de PM10 en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigP10)
+
+#ggplotly(FigP10)
+
+```
+
+
+
+#graphique Variation particule-gaz en fonction de Temperature / humidité.  
+
+
+# FIGURE T
+```{r figuresTemperature}
+library(cowplot)
+
+P0=ggplot(data=donnees, aes(x = Temperature, y = Temperature, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point()
+
+P1=ggplot(data=donnees, aes(x = Humidity, y = Temperature, color= Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point()
+
+P2=ggplot(data=donnees, aes(x = Pressure, y = Temperature, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() 
+
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 12, align = "v")
+
+```
+
+# FIGURE NO2
+```{r figuresNO2}
+library(cowplot)
+
+P0=ggplot(data=donnees, aes(x = Temperature, y = NO2, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point()
+
+P1=ggplot(data=donnees, aes(x = Humidity, y = NO2, color= Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point()
+
+P2=ggplot(data=donnees, aes(x = Pressure, y = NO2, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() 
+
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 12, align = "v")
+
+#print(P0)
+
+
+   #scale_x_continuous(n.breaks = 6) + 
+  #xlim(0, 24) +
+                     
+             #        limits = c(0, 24)) +
+  #seq(0, 23, by = 5n.breaks
+ 
+  # labs(y = " Temperature (°C)\n",
+  #      x = "\nHeure",
+  #      title = "\nEvolution de la température en fonction de l'heure, Clécy 2021\n") +
+  # theme_bw() +
+  # theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+  #       strip.text = element_text(size = rel(1)),
+  #       panel.grid = element_blank())
+
+
+```
+
+
+# FIGURE CO
+```{r figuresCO}
+library(cowplot)
+
+P0=ggplot(data=donnees, aes(x = Temperature, y = CO, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point()
+
+P1=ggplot(data=donnees, aes(x = Humidity, y = CO, color= Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point()
+
+P2=ggplot(data=donnees, aes(x = Pressure, y = CO, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() 
+
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 12, align = "v")
+
+```
+
+
+# FIGURE O3
+```{r figuresCO}
+library(cowplot)
+
+P0=ggplot(data=donnees, aes(x = Temperature, y = O3, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point()
+
+
+
+P1=ggplot(data=donnees, aes(x = Humidity, y = O3, color= Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point()
+
+
+
+P2=ggplot(data=donnees, aes(x = Pressure, y = O3, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() 
+
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 12, align = "v")
+```
+
+
+# FIGURE NO
+```{r figuresCO}
+library(cowplot)
+
+P0=ggplot(data=donnees, aes(x = Temperature, y = NO, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point()
+
+
+
+P1=ggplot(data=donnees, aes(x = Humidity, y = NO, color= Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point()
+
+
+
+P2=ggplot(data=donnees, aes(x = Pressure, y = NO, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() 
+
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 12, align = "v")
+
+```
+
+# FIGURE P1
+```{r figuresP1}
+library(cowplot)
+
+P0=ggplot(data=donnees, aes(x = Temperature, y = P1, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point()
+
+
+
+P1=ggplot(data=donnees, aes(x = Humidity, y = P1, color= Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point()
+
+
+
+P2=ggplot(data=donnees, aes(x = Pressure, y = P1, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() 
+
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 12, align = "v")
+```
+
+# FIGURE P25
+```{r figuresP25}
+library(cowplot)
+
+P0=ggplot(data=donnees, aes(x = Temperature, y = P25, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() +
+  geom_hline(yintercept = 15, lty = "dotted")
+
+
+P1=ggplot(data=donnees, aes(x = Humidity, y = P25, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() +
+  geom_hline(yintercept = 15, lty = "dotted")
+
+
+P2=ggplot(data=donnees, aes(x = Pressure, y = P25, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() +
+  geom_hline(yintercept = 15, lty = "dotted")
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 12, align = "v")
+```
+
+
+# FIGURE P10
+```{r figuresCO}
+library(cowplot)
+
+P0=ggplot(data=donnees, aes(x = Temperature, y = P10, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() +
+  geom_hline(yintercept = 45, lty = "dotted") 
+
+
+P1=ggplot(data=donnees, aes(x = Humidity, y = P10, color= Period)) +
+   scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+   geom_point() +
+   geom_hline(yintercept = 45, lty = "dotted") 
+
+
+P2=ggplot(data=donnees, aes(x = Pressure, y = P10, color= Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() +
+  geom_hline(yintercept = 45, lty = "dotted") 
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 12, align = "v")
+```
+
+
+# FIN REPORT
+
+
+#FIN NOUVEAU FORMAT
+
+### Figures
+```{r ggplot2 format imprimable}
+library(ggh4x)
+
+G23= ggplot(data = donnees, aes(y = CO, x = Heure, color = Periode)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) + 
+  geom_pointpath() +
+  geom_hline(yintercept = 0.004, lty = "dotted") +
+  #scale_y_continuous(breaks = seq(("-2"), 2, by = 0.5)) +
+  facet_grid(. ~ Date) +
+  labs(y = "CO volatil (ppm)\n",
+       x = "\nHeure",
+       title = "CO (ppm) en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(G23)
+
+
+
+```
+
+### Figures TEST
+
+```{r figuresHumidite}
+
+
+P0=ggplot(donnees, aes(x = Time, y = CO, color=as.factor(Period))) +
+  geom_point()+
+  #scale_x_continuous(breaks = seq(0, 23, by = 5)) +
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("Heure")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Period"), summarise,
+               N    = length(CO),
+               H_mean = mean(CO),
+               sd   = sd(CO),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP1}
+
+
+P3=ggplot(donnees, aes(x = Period, y = CO, color=Period)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("Period")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+
+## scipts NOIREZ ENTIER
+
+```{r valeursP1}
+
+val0=summarySE(data=donnees,measurevar = "CO",groupvars = c("Periode"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+# val1=summarySE(data=donnees,measurevar = "VO2",groupvars = c("Box","activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val1,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+# val2=summarySE(data=donnees,measurevar = "VO2",groupvars = c("activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val2,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+
+```
+
+
+<!-- ### Variance homogeneity test -->
+
+<!-- ```{r homegenieteVarianceVO2} -->
+
+<!-- leveneTest(T ~ Periode,data=donnees) -->
+
+
+
+
+<!-- ``` -->
+
+
+
+<!-- ### Analyse de la variance à 3 facteurs (phenotype,Activity,Day) et mesures répétées - 3-way anova with repeated measures -->
+
+
+<!-- ```{r vairableAnovaGLMVO2} -->
+
+<!-- fm <- lme(VO2~  phenotype*day*activity,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- # Il n'y a aucun effet : on doit stopper l'analyse -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- fm <- lme(VO2~  day*activity*phenotype,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity|phenotype,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|phenotype|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ phenotype|activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- ``` -->
+<!-- ```{r effectSizeVO2} -->
+<!-- library(effectsize) -->
+<!-- mod=aov(VO2 ~ phenotype*day*activity+Error(Box), data=donnees) -->
+<!-- eta_squared(mod) -->
+<!-- ``` -->
+
+### Figures
+
+```{r figuresCO}
+
+donnees$monTemps <- lubridate::ymd_hms(donnees$Temps)
+
+P0=ggplot(donnees, aes(x = monTemps, y = CO, color=as.factor(Periode))) +
+  geom_point()+
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("CO")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Periode"), summarise,
+               N    = length(CO),
+               CO_mean = mean(CO),
+               sd   = sd(CO),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP1}
+
+
+P3=ggplot(donnees, aes(x = Periode, y = P1, color=Periode)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P1")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+
+

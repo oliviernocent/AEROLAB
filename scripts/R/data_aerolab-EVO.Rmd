@@ -1,0 +1,1653 @@
+---
+title: "Rapport mesure de polluant sur l'Ultra Trail scientifique de Clécy"
+author: "Quentin Martinet"
+date: "25/11/2021"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, eval=FALSE, include=FALSE}
+rmarkdown::render("reportGlobal.Rmd", "html_document")
+
+rmarkdown::render("reportGlobal.Rmd", "html_document", encoding = "UTF-8")
+
+rmarkdown::render("reportGlobal.Rmd", "html_document", encoding = "UTF-8", quiet = TRUE)
+
+rmarkdown::render("reportGlobal.Rmd", "word_document", encoding = "UTF-8", quiet = TRUE)
+
+rmarkdown::render("reportGlobal.Rmd", "pdf_document", encoding = "UTF-8", quiet = TRUE)
+
+```
+
+```{r library,echo=FALSE,message=FALSE}
+require(ggplot2)
+require(plyr)
+require(car)
+library(scales)
+library(multcomp)
+library(nlme)
+library(cowplot)
+library(emmeans)
+library(cowplot)
+library(Rmisc)
+library(plotly)
+library(dplyr)
+library(lubridate)
+library(DT)
+library(ggridges)
+library(ggpubr)
+library(ggh4x)
+library(ggalt)
+library(waffle)
+library(ggdist)
+library(ggforce)
+library(ggtext)
+library(summariser)
+library(skimr)
+library(plotly)
+library(splines)
+```
+
+
+# Protocol and variables
+
+
+## Protocol
+
+
+
+## Variables
+
+- Numero du capteur
+    Capteur 1 : station centre Km 0
+    capteur 2 : station poste de secours Km 14
+- Date
+- Periode
+    Jour étant du lever au coucher du soleil
+    Nuit étant du coucher au lever du soleil
+- Heure
+- Seconde
+-Conditions
+  - Température (°C)
+  - Humidité (%RH)
+  - Pression (hPa)
+- Mesures de gaz (ppm)
+  - NO2
+  - CO
+  - 03
+  - NO
+- Mesures de particules (en µg/mol3)
+  - PM1
+  - PM2.5
+  - PM10
+- Temps en seconde depuis le démarrage de l'acquisition (redemarre à 0 à chaque démarrage/mise sous tension)
+  - UPT
+    
+
+### independant
+
+* To be completed
+
+
+
+# DATA
+
+```{r donnees, echo=FALSE}
+#donnees <- read.table( file = "ANGII-csv.csv", dec = ',', sep = ';', head = TRUE )
+#setwd("/home/philippe/recherche/PMM/2021/2726-Gerasimos/")
+donnees <- read.table( file = "../../data/2021-11-11/DATA.csv", dec = '.', sep = ',', head = TRUE )
+# option pour l'anova
+options(contrasts=c("contr.sum","contr.poly"))
+
+#donnees$Box=as.factor(donnees$Box)
+
+dataSensor1 <- subset( donnees, donnees$Sensor == "1" )
+dataSensor2 <- subset( donnees, donnees$Sensor == "2" )
+
+#dataJ1 <- subset( donnees, donnees$day == "D1" )
+#dataJ2 <- subset( donnees, donnees$day == "D2" )
+#dataJ3 <- subset( donnees, donnees$day == "D3" )
+
+
+DT::datatable(
+  donnees,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+```
+
+```{r explore, echo=FALSE,eval=FALSE}
+library(DataExplorer)
+create_report(donnees)
+
+library(dataMaid)
+makeCodebook(donnees)
+
+```
+
+
+# Graphique par jour
+## Temperature
+
+```{r valeurs_Temperature}
+
+skim(donnees$Temperature)
+summary(donnees$Temperature)
+
+
+val0=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+ 
+
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+ 
+ 
+"Sensor 2"
+ 
+val0=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Humidity"), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+# 
+# val3=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Humidite"), na.rm=TRUE)
+# DT::datatable(
+#    val3,
+#    fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+```
+
+#FIGURE TYPE TEMPERATURE
+```{r ggplot2 format imprimable}
+library(ggh4x)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigT= ggplot(data=donnees, aes(y = Temperature, x = monTemps, color = interaction(Period,Sensor))) +
+   #scale_color_manual(values=c('#999999','#E69F00', '#56B4E9', '#56B4E6'))+
+
+#scale_colour_brewer()
+
+  #aes dans geom point
+  
+  geom_point() +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, aes(colour = "A"), fill="blue" )+
+ 
+  
+  #scale_colour_hue() +  
+  
+  scale_colour_manual(name="legend", 
+                      values=c("black", "red", "green", "blue", "orange"), 
+                      labels = c("courbe de corr", "Jour S1", "Nuit S1", "Jour S2", "Nuit S2"), 
+                      #theme(legend.position = "top"))+
+                      theme(legend.justification=c(1,0), legend.position=c(0.95,0.1)))+
+
+  # theme_bw() + 
+  # theme(legend.position="none", legend.title=element_blank())+
+  # 
+  
+   geom_hline(yintercept = 0.004, lty = "dotted") +
+    #scale_x_continuous(breaks = seq(0, 24, by = 6)) +
+  
+  
+  labs(y = " Temperature (°C)\n",
+       x = "\nDate" )+
+       #title = "\nEvolution de la température en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigT)
+
+#ggsave("NO2/Heure.png", plot = G22, width = 11, height = 8)
+
+#ggplotly(FigT)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+```
+
+
+
+
+```{r}
+ggplot(data = donnees, aes(x =Time, y = NO2)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = c("< 12", "12+")) +
+  facet_grid(. ~ Date) +
+  labs(y = "Taux de croissance du produit intérieur brut\n",
+       x = "\nRatio dette publique / produit intérieur brut (%)",
+       title = "Données Reinhart et Rogoff corrigées, 1946-2009\n") +
+  theme_linedraw() +
+  theme(strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+```
+
+
+
+
+## Humidité
+
+```{r valeurs_Humidity}
+
+skim(donnees$Humidity)
+summary(donnees$Humidity)
+
+val1=summarySE(data=donnees,measurevar = "Humidity",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+   val1,
+   fillContainer = FALSE, options = list(pageLength = 10)
+)
+# 
+# val2=summarySE(data=donnees,measurevar = "Humidity",groupvars = c("Time"), na.rm=TRUE)
+# DT::datatable(
+#    val2,
+#    fillContainer = FALSE, options = list(pageLength = 10)
+# )
+# 
+# val3=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Humidite"), na.rm=TRUE)
+# DT::datatable(
+#    val3,
+#    fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+```
+#FIGURE HUMIDITY
+```{r ggplot2 format imprimable}
+library(ggh4x)
+
+FigH= ggplot(data = donnees, aes(y = Humidity, x = Time, color = Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) + 
+  geom_pointpath() +
+  geom_hline(yintercept = 0.004, lty = "dotted") +
+  #scale_y_continuous(breaks = seq(("-2"), 2, by = 0.5)) +
+  facet_grid(. ~ Date) +
+  labs(y = " Humidité (%HR)\n",
+       x = "\nHeure",
+       title = "Evolution de l'humidité en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigH)
+#ggsave("NO2/Heure.png", plot = G22, width = 11, height = 8)
+```
+## NO2
+
+```{r valeurs_NO2}
+
+
+skim(donnees$NO2)
+summary(donnees$NO2)
+
+val1=summarySE(data=donnees,measurevar = "NO2",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+   val1,
+   fillContainer = FALSE, options = list(pageLength = 10)
+)
+# 
+# val2=summarySE(data=donnees,measurevar = "Humidity",groupvars = c("Time"), na.rm=TRUE)
+# DT::datatable(
+#    val2,
+#    fillContainer = FALSE, options = list(pageLength = 10)
+# )
+# 
+# val3=summarySE(data=donnees,measurevar = "Temperature",groupvars = c("Humidite"), na.rm=TRUE)
+# DT::datatable(
+#    val3,
+#    fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+```
+#FIGURE NO2
+```{r ggplot2 format imprimable}
+library(ggh4x)
+
+FigH= ggplot(data = donnees, aes(y = NO2, x = Time, color = Period)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) + 
+  geom_pointpath() +
+  geom_hline(yintercept = 0.004, lty = "dotted") +
+  #scale_y_continuous(breaks = seq(("-2"), 2, by = 0.5)) +
+  facet_grid(. ~ Date) +
+  labs(y = " NO2 (ppm)\n",
+       x = "\nHeure",
+       title = "Evolution dU NO2 en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(FigH)
+#ggsave("NO2/Heure.png", plot = G22, width = 11, height = 8)
+```
+
+#FIN NOUVEAU FORMAT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Figures
+
+```{r qplot}
+
+#with(donnees, qplot(NO2, Humidite))
+
+F1= qplot(Heure, NO2, data = donnees)
+print(F1)
+
+
+F2= qplot(NO2, Humidite, data = donnees)+
+  facet_wrap(~ Date)
+#print(F2)
+
+F3= qplot(data=donnees, y =NO2, x=Humidite, geom="line")+
+  facet_wrap(~ Date)
+print(F3)
+
+F4= qplot(data=donnees, y =NO2, x=Humidite, geom= c("line", "point"))+
+  facet_wrap(~ Date)+
+  labs(x= "Humidité (%)\n", 
+       y= "NO2 en fonction de l'humidité\n")
+print(F4)
+
+
+
+```
+
+```{r ggplot}
+
+G1 = ggplot(data = donnees, aes(y = NO2, x = O3)) +
+  geom_point() +
+  facet_grid(.~ Date)
+print(G1)
+
+G2 = ggplot(data = donnees, aes(y = NO2, x = Heure, color = Periode)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) +
+  geom_point() +
+  facet_grid(.~ Date) #+
+  #scale_x_continuous(breaks = seq(0,0.020, by = 0.005))
+print(G2)
+
+
+```
+
+```{r ggplot2 format imprimable}
+library(ggh4x)
+
+G22= ggplot(data = donnees, aes(y = NO2, x = Heure, color = Periode)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) + 
+  geom_pointpath() +
+  #geom_vline(xintercept = 0.015, lty = "dotted") +
+  #scale_x_continuous(breaks = seq(0, 200, by = 100)) +
+  facet_grid(. ~ Date) +
+  labs(y = "NO2 volatil (ppm)\n",
+       x = "\nHeure",
+       title = "NO2 (ppm) en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(G22)
+#ggsave("NO2/Heure.png", plot = G22, width = 11, height = 8)
+
+
+```
+
+```{r ggplot2 format imprimable}
+library(ggh4x)
+
+G23= ggplot(data = donnees, aes(y = CO, x = Heure, color = Periode)) +
+  scale_colour_brewer(palette="Set1", labels= c("Jour", "Nuit")) + 
+  geom_pointpath() +
+  geom_hline(yintercept = 0.004, lty = "dotted") +
+  #scale_y_continuous(breaks = seq(("-2"), 2, by = 0.5)) +
+  facet_grid(. ~ Date) +
+  labs(y = "CO volatil (ppm)\n",
+       x = "\nHeure",
+       title = "CO (ppm) en fonction de l'heure, Clécy 2021\n") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill = "grey90", color = "grey50"),
+        strip.text = element_text(size = rel(1)),
+        panel.grid = element_blank())
+
+print(G23)
+#ggsave("NO2/Heure.png", plot = G22, width = 11, height = 8)
+
+
+```
+
+```{r figuresTemperature}
+#donnees$monTemps <- lubridate::ymd_hms(donnees$TempsISO)
+
+P0=ggplot(data=donnees, aes(x = Humidity, y = P25, color= Period)) +
+  geom_point()
+
+print(P0)
+#plot_grid(P5,grid,ncol = 2)
+```
+
+## H
+
+```{r valeursH}
+
+val0=summarySE(data=donnees,measurevar = "Humidite",groupvars = c("Periode"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+# val1=summarySE(data=donnees,measurevar = "VO2",groupvars = c("Box","activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val1,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+# val2=summarySE(data=donnees,measurevar = "VO2",groupvars = c("activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val2,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+
+```
+
+### Figures TEST
+
+```{r figuresHumidite}
+
+
+P0=ggplot(donnees, aes(x = Heure, y = CO, color=as.factor(Periode))) +
+  geom_point()+
+  scale_x_continuous(breaks = seq(0, 23, by = 5)) +
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("Heure")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Periode"), summarise,
+               N    = length(Humidite),
+               H_mean = mean(Humidite),
+               sd   = sd(Humidite),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP1}
+
+
+P3=ggplot(donnees, aes(x = Periode, y = P1, color=Periode)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P1")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+## P
+
+```{r valeursP}
+
+val0=summarySE(data=donnees,measurevar = "P",groupvars = c("Periode"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+# val1=summarySE(data=donnees,measurevar = "VO2",groupvars = c("Box","activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val1,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+# val2=summarySE(data=donnees,measurevar = "VO2",groupvars = c("activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val2,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+
+```
+
+
+### Figures
+
+```{r figuresP}
+
+donnees$monTemps <- lubridate::ymd_hms(donnees$Temps)
+
+P0=ggplot(donnees, aes(x = monTemps, y = P, color=as.factor(Periode))) +
+  geom_point()+
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Periode"), summarise,
+               N    = length(P),
+               P_mean = mean(P),
+               sd   = sd(P),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP1}
+
+
+P3=ggplot(donnees, aes(x = Periode, y = P1, color=Periode)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P1")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+## NO2
+
+```{r valeursNO2}
+
+val0=summarySE(data=donnees,measurevar = "NO2",groupvars = c("Periode"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+# val1=summarySE(data=donnees,measurevar = "VO2",groupvars = c("Box","activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val1,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+# val2=summarySE(data=donnees,measurevar = "VO2",groupvars = c("activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val2,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+
+```
+
+
+<!-- ### Variance homogeneity test -->
+
+<!-- ```{r homegenieteVarianceVO2} -->
+
+<!-- leveneTest(T ~ Periode,data=donnees) -->
+
+
+
+
+<!-- ``` -->
+
+
+
+<!-- ### Analyse de la variance à 3 facteurs (phenotype,Activity,Day) et mesures répétées - 3-way anova with repeated measures -->
+
+
+<!-- ```{r vairableAnovaGLMVO2} -->
+
+<!-- fm <- lme(VO2~  phenotype*day*activity,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- # Il n'y a aucun effet : on doit stopper l'analyse -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- fm <- lme(VO2~  day*activity*phenotype,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity|phenotype,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|phenotype|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ phenotype|activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- ``` -->
+<!-- ```{r effectSizeVO2} -->
+<!-- library(effectsize) -->
+<!-- mod=aov(VO2 ~ phenotype*day*activity+Error(Box), data=donnees) -->
+<!-- eta_squared(mod) -->
+<!-- ``` -->
+
+
+
+### Figures
+
+
+```{r figuresNO2}
+
+donnees$monTemps <- lubridate::ymd_hms(donnees$Temps)
+
+P0=ggplot(donnees, aes(x = monTemps, y = NO2, color=as.factor(Periode))) +
+  geom_point()+
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("NO2")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Periode"), summarise,
+               N    = length(NO2),
+               NO2_mean = mean(NO2),
+               sd   = sd(NO2),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP1}
+
+
+P3=ggplot(donnees, aes(x = Periode, y = P1, color=Periode)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P1")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+## CO
+
+```{r valeursP1}
+
+val0=summarySE(data=donnees,measurevar = "CO",groupvars = c("Periode"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+# val1=summarySE(data=donnees,measurevar = "VO2",groupvars = c("Box","activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val1,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+# val2=summarySE(data=donnees,measurevar = "VO2",groupvars = c("activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val2,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+
+```
+
+
+<!-- ### Variance homogeneity test -->
+
+<!-- ```{r homegenieteVarianceVO2} -->
+
+<!-- leveneTest(T ~ Periode,data=donnees) -->
+
+
+
+
+<!-- ``` -->
+
+
+
+<!-- ### Analyse de la variance à 3 facteurs (phenotype,Activity,Day) et mesures répétées - 3-way anova with repeated measures -->
+
+
+<!-- ```{r vairableAnovaGLMVO2} -->
+
+<!-- fm <- lme(VO2~  phenotype*day*activity,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- # Il n'y a aucun effet : on doit stopper l'analyse -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- fm <- lme(VO2~  day*activity*phenotype,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity|phenotype,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|phenotype|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ phenotype|activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- ``` -->
+<!-- ```{r effectSizeVO2} -->
+<!-- library(effectsize) -->
+<!-- mod=aov(VO2 ~ phenotype*day*activity+Error(Box), data=donnees) -->
+<!-- eta_squared(mod) -->
+<!-- ``` -->
+
+### Figures
+
+```{r figuresCO}
+
+donnees$monTemps <- lubridate::ymd_hms(donnees$Temps)
+
+P0=ggplot(donnees, aes(x = monTemps, y = CO, color=as.factor(Periode))) +
+  geom_point()+
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("CO")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Periode"), summarise,
+               N    = length(CO),
+               CO_mean = mean(CO),
+               sd   = sd(CO),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP1}
+
+
+P3=ggplot(donnees, aes(x = Periode, y = P1, color=Periode)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P1")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+## 03
+
+```{r valeursO3}
+
+val0=summarySE(data=donnees,measurevar = "O3",groupvars = c("Periode"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+# val1=summarySE(data=donnees,measurevar = "VO2",groupvars = c("Box","activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val1,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+# val2=summarySE(data=donnees,measurevar = "VO2",groupvars = c("activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val2,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+
+```
+
+
+<!-- ### Variance homogeneity test -->
+
+<!-- ```{r homegenieteVarianceVO2} -->
+
+<!-- leveneTest(T ~ Periode,data=donnees) -->
+
+
+
+
+<!-- ``` -->
+
+
+
+<!-- ### Analyse de la variance à 3 facteurs (phenotype,Activity,Day) et mesures répétées - 3-way anova with repeated measures -->
+
+
+<!-- ```{r vairableAnovaGLMVO2} -->
+
+<!-- fm <- lme(VO2~  phenotype*day*activity,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- # Il n'y a aucun effet : on doit stopper l'analyse -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- fm <- lme(VO2~  day*activity*phenotype,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity|phenotype,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|phenotype|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ phenotype|activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- ``` -->
+<!-- ```{r effectSizeVO2} -->
+<!-- library(effectsize) -->
+<!-- mod=aov(VO2 ~ phenotype*day*activity+Error(Box), data=donnees) -->
+<!-- eta_squared(mod) -->
+<!-- ``` -->
+
+### Figures
+
+```{r figuresO3}
+
+donnees$monTemps <- lubridate::ymd_hms(donnees$Temps)
+
+P0=ggplot(donnees, aes(x = monTemps, y = O3, color=as.factor(Periode))) +
+  geom_point()+
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("O3")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Periode"), summarise,
+               N    = length(O3),
+               O3_mean = mean(O3),
+               sd   = sd(O3),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP1}
+
+
+P3=ggplot(donnees, aes(x = Periode, y = P1, color=Periode)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P1")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+## NO
+
+```{r valeursNO}
+
+val0=summarySE(data=donnees,measurevar = "NO",groupvars = c("Periode"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+# val1=summarySE(data=donnees,measurevar = "VO2",groupvars = c("Box","activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val1,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+# val2=summarySE(data=donnees,measurevar = "VO2",groupvars = c("activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val2,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+
+```
+
+
+<!-- ### Variance homogeneity test -->
+
+<!-- ```{r homegenieteVarianceVO2} -->
+
+<!-- leveneTest(T ~ Periode,data=donnees) -->
+
+
+
+
+<!-- ``` -->
+
+
+
+<!-- ### Analyse de la variance à 3 facteurs (phenotype,Activity,Day) et mesures répétées - 3-way anova with repeated measures -->
+
+
+<!-- ```{r vairableAnovaGLMVO2} -->
+
+<!-- fm <- lme(VO2~  phenotype*day*activity,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- # Il n'y a aucun effet : on doit stopper l'analyse -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- fm <- lme(VO2~  day*activity*phenotype,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity|phenotype,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|phenotype|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ phenotype|activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- ``` -->
+<!-- ```{r effectSizeVO2} -->
+<!-- library(effectsize) -->
+<!-- mod=aov(VO2 ~ phenotype*day*activity+Error(Box), data=donnees) -->
+<!-- eta_squared(mod) -->
+<!-- ``` -->
+
+### Figures
+
+```{r figuresNO}
+
+donnees$monTemps <- lubridate::ymd_hms(donnees$Temps)
+
+P0=ggplot(donnees, aes(x = monTemps, y = NO, color=as.factor(Periode))) +
+  geom_point()+
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("NO")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Periode"), summarise,
+               N    = length(NO),
+               NO_mean = mean(NO),
+               sd   = sd(NO),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP1}
+
+
+P3=ggplot(donnees, aes(x = Periode, y = P1, color=Periode)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P1")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+## P1
+
+```{r valeursP1}
+
+val0=summarySE(data=donnees,measurevar = "P1",groupvars = c("Periode"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+# val1=summarySE(data=donnees,measurevar = "VO2",groupvars = c("Box","activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val1,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+# val2=summarySE(data=donnees,measurevar = "VO2",groupvars = c("activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val2,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+
+```
+
+
+<!-- ### Variance homogeneity test -->
+
+<!-- ```{r homegenieteVarianceVO2} -->
+
+<!-- leveneTest(T ~ Periode,data=donnees) -->
+
+
+
+
+<!-- ``` -->
+
+
+
+<!-- ### Analyse de la variance à 3 facteurs (phenotype,Activity,Day) et mesures répétées - 3-way anova with repeated measures -->
+
+
+<!-- ```{r vairableAnovaGLMVO2} -->
+
+<!-- fm <- lme(VO2~  phenotype*day*activity,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- # Il n'y a aucun effet : on doit stopper l'analyse -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- fm <- lme(VO2~  day*activity*phenotype,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity|phenotype,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|phenotype|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ phenotype|activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- ``` -->
+<!-- ```{r effectSizeVO2} -->
+<!-- library(effectsize) -->
+<!-- mod=aov(VO2 ~ phenotype*day*activity+Error(Box), data=donnees) -->
+<!-- eta_squared(mod) -->
+<!-- ``` -->
+
+### Figures
+
+```{r figuresP1}
+
+donnees$monTemps <- lubridate::ymd_hms(donnees$Temps)
+
+P0=ggplot(donnees, aes(x = monTemps, y = P1, color=as.factor(Periode))) +
+  geom_point()+
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P1")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Periode"), summarise,
+               N    = length(P1),
+               P1_mean = mean(P1),
+               sd   = sd(P1),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP1}
+
+
+P3=ggplot(donnees, aes(x = Periode, y = P1, color=Periode)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P1")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+## P2.5
+
+```{r valeursP25}
+
+val0=summarySE(data=donnees,measurevar = "P25",groupvars = c("Periode"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+# val1=summarySE(data=donnees,measurevar = "VO2",groupvars = c("Box","activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val1,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+# val2=summarySE(data=donnees,measurevar = "VO2",groupvars = c("activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val2,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+
+```
+
+
+<!-- ### Variance homogeneity test -->
+
+<!-- ```{r homegenieteVarianceVO2} -->
+
+<!-- leveneTest(T ~ Periode,data=donnees) -->
+
+
+
+
+<!-- ``` -->
+
+
+
+<!-- ### Analyse de la variance à 3 facteurs (phenotype,Activity,Day) et mesures répétées - 3-way anova with repeated measures -->
+
+
+<!-- ```{r vairableAnovaGLMVO2} -->
+
+<!-- fm <- lme(VO2~  phenotype*day*activity,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- # Il n'y a aucun effet : on doit stopper l'analyse -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- fm <- lme(VO2~  day*activity*phenotype,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity|phenotype,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|phenotype|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ phenotype|activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- ``` -->
+<!-- ```{r effectSizeVO2} -->
+<!-- library(effectsize) -->
+<!-- mod=aov(VO2 ~ phenotype*day*activity+Error(Box), data=donnees) -->
+<!-- eta_squared(mod) -->
+<!-- ``` -->
+
+
+
+### Figures
+
+
+```{r figuresP25}
+
+donnees$monTemps <- lubridate::ymd_hms(donnees$Temps)
+
+P0=ggplot(donnees, aes(x = monTemps, y = P25, color=as.factor(Periode))) +
+  geom_point()+
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P25")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Periode"), summarise,
+               N    = length(P25),
+               VO2mean = mean(P25),
+               sd   = sd(P25),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP25}
+
+
+P3=ggplot(donnees, aes(x = Periode, y = P1, color=Periode)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P25")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+
+
+## P10
+
+```{r valeursP1}
+
+val0=summarySE(data=donnees,measurevar = "P10",groupvars = c("Periode"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+# val1=summarySE(data=donnees,measurevar = "VO2",groupvars = c("Box","activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val1,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+# val2=summarySE(data=donnees,measurevar = "VO2",groupvars = c("activity","day"), na.rm=TRUE)
+# DT::datatable(
+#   val2,
+#   fillContainer = FALSE, options = list(pageLength = 10)
+# )
+
+
+```
+
+
+<!-- ### Variance homogeneity test -->
+
+<!-- ```{r homegenieteVarianceVO2} -->
+
+<!-- leveneTest(T ~ Periode,data=donnees) -->
+
+
+
+
+<!-- ``` -->
+
+
+
+<!-- ### Analyse de la variance à 3 facteurs (phenotype,Activity,Day) et mesures répétées - 3-way anova with repeated measures -->
+
+
+<!-- ```{r vairableAnovaGLMVO2} -->
+
+<!-- fm <- lme(VO2~  phenotype*day*activity,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- # Il n'y a aucun effet : on doit stopper l'analyse -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- fm <- lme(VO2~  day*activity*phenotype,data=donnees, random= ~ 1 | Box, na.action=na.omit) -->
+<!-- #help(lme) -->
+<!-- anova(fm) -->
+<!-- summary(glht(fm, lsm(pairwise ~ day|activity|phenotype,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ activity|phenotype|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+<!-- summary(glht(fm, lsm(pairwise ~ phenotype|activity|day,na.action=na.exclude)),test = adjusted("bonferroni")) -->
+
+<!-- ``` -->
+<!-- ```{r effectSizeVO2} -->
+<!-- library(effectsize) -->
+<!-- mod=aov(VO2 ~ phenotype*day*activity+Error(Box), data=donnees) -->
+<!-- eta_squared(mod) -->
+<!-- ``` -->
+
+### Figures
+
+```{r figuresP10}
+
+donnees$monTemps <- lubridate::ymd_hms(donnees$Temps)
+
+P0=ggplot(donnees, aes(x = monTemps, y = P10, color=as.factor(Periode))) +
+  geom_point()+
+#  geom_line()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P10")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P0
+ggplotly(P0)
+
+cdata <- ddply(donnees, c("Periode"), summarise,
+               N    = length(P10),
+               P10_mean = mean(P10),
+               sd   = sd(P10),
+               se   = sd / sqrt(N)
+)
+DT::datatable(
+  cdata,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+```{r figuresActivityP1}
+
+
+P3=ggplot(donnees, aes(x = Periode, y = P1, color=Periode)) +
+  geom_boxplot()+
+# stat_summary(fun=mean, geom="point", shape=20, size=4, color="red", fill="red")+
+#xlab("ERFE/Fam132b")+
+xlab("P1")+
+  # ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1) ))+
+ #ylab(expression(dot(V)*O[2]*phantom(0)*peak*phantom(0)* (ml.h ^-1*.g ^-1) ))+
+  #ylab(expression(Smax*phantom(0)* (m.s ^-1) ))+
+  theme_bw() + 
+  theme(legend.position="none", legend.title=element_blank())+ 
+  #theme(legend.justification=c(1,0), legend.position=c(0.95,0.1))+
+  theme(legend.title=element_blank())+  theme(panel.grid.minor = element_blank())+ theme(panel.grid.major = element_blank())+
+   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 1))+
+
+  theme(axis.title.x = element_text(size=20), axis.text.x  = element_text(size=20),axis.title.y = element_text(size=20), axis.text.y  = element_text(size=20, angle = 90,hjust = 1,vjust = 1) )
+P3
+ggplotly(P3)
+
+
+#plot_grid(P5,grid,ncol = 2)
+```
+
+

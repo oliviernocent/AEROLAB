@@ -1,0 +1,1984 @@
+---
+title: "Rapport mesure de la qualité de l'air durant l'Ultra Trail scientifique de Clécy 2021"
+author: "Quentin Martinet"
+date: "01/12/2021"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, eval=FALSE, include=FALSE}
+rmarkdown::render("reportGlobal.Rmd", "html_document")
+
+rmarkdown::render("reportGlobal.Rmd", "html_document", encoding = "UTF-8")
+
+rmarkdown::render("reportGlobal.Rmd", "html_document", encoding = "UTF-8", quiet = TRUE)
+
+rmarkdown::render("reportGlobal.Rmd", "word_document", encoding = "UTF-8", quiet = TRUE)
+
+rmarkdown::render("reportGlobal.Rmd", "pdf_document", encoding = "UTF-8", quiet = TRUE)
+
+```
+
+```{r library,echo=FALSE,message=FALSE}
+require(ggplot2)
+require(plyr)
+require(car)
+library(scales)
+library(multcomp)
+library(nlme)
+library(cowplot)
+library(emmeans)
+library(cowplot)
+library(Rmisc)
+library(plotly)
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(DT)
+library(ggridges)
+library(ggpubr)
+library(ggh4x)
+library(ggalt)
+library(waffle)
+library(ggdist)
+library(ggforce)
+library(ggtext)
+library(summariser)
+library(skimr)
+library(plotly)
+```
+
+
+# Protocol and variables
+
+
+## Protocol
+
+Mesure de la qualité de l'air par 2 capteurs (LOAC et AQT530) pendant une même période de 1 mois. Cette méthode permettra de voir les posible divergence et écart de mesure entre le capteur AQT530 utilisé lors de l'ultratrail de clécy et le LOAC qui es considéré comme un étalon or pour la mesure des particules fines.
+
+## Variables
+
+- capteur
+    Capteur 1 : LOAC
+    capteur 2 : AQT530
+
+
+- Periode
+    Jour étant du lever au coucher du soleil
+    Nuit étant du coucher au lever du soleil
+
+-Conditions
+  - Température (°C)
+  - Humidité (%RH)
+  - Pression (hPa)
+
+- Mesures de particules (en µg/mol3)
+  - PM1
+  - PM2.5
+  - PM10
+    
+
+### independant
+
+* To be completed
+
+
+
+# DATA
+
+```{r donnees, echo=FALSE}
+
+DATA1 <- read.table(file = "../../data/2021-11-11/AQT530/DATA_full.csv",dec = '.', encoding = 'utf-8', sep = ',', header = TRUE, check.names = FALSE)
+# option pour l'anova
+options(contrasts=c("contr.sum","contr.poly"))
+
+
+DATA2 <- read.table(file = "../../data/2021-11-11/LOAC/LOAC_LOCAL20211101-20211107_full.csv",dec = '.', encoding = 'utf-8', sep = ',', header = TRUE, check.names = FALSE)
+# option pour l'anova
+options(contrasts=c("contr.sum","contr.poly"))
+  
+
+#DATA <- left_join(data1, data2)
+
+#DATA = left_join(data1, data2)
+
+#dataNuit <- subset( donnees, donnees$activity == "Night" )
+#dataJour <- subset( donnees, donnees$activity == "Day" )
+
+#dataJ1 <- subset( donnees, donnees$day == "D1" )
+#dataJ2 <- subset( donnees, donnees$day == "D2" )
+
+
+
+DT::datatable(
+  donnees,
+  fillContainer = FALSE, options = list(pageLength = 10))
+  
+```
+
+
+```{r donnees, echo=FALSE}
+d1 <- read.table( file = "../../data/2021-11-11/AQT530/DATA_full.csv", dec = '.', sep = ',', head = TRUE, fileEncoding="UTF-8" ) 
+# option pour l'anova
+options(contrasts=c("contr.sum","contr.poly"))
+
+
+d2 <- read.table( file = "../../data/2021-11-11/LOAC/LOAC_LOCAL20211101-20211107_full.csv", dec = '.', sep = ',', head = TRUE, fileEncoding="UTF-8" ) 
+# option pour l'anova
+options(contrasts=c("contr.sum","contr.poly"))
+
+
+
+head(cbind(d1, d2))
+
+
+#dataNuit <- subset( donnees, donnees$activity == "Night" )
+#dataJour <- subset( donnees, donnees$activity == "Day" )
+
+#dataJ1 <- subset( donnees, donnees$day == "D1" )
+#dataJ2 <- subset( donnees, donnees$day == "D2" )
+
+
+
+DT::datatable(
+  donnees,
+  fillContainer = FALSE, options = list(pageLength = 10))
+  
+```
+
+
+
+
+
+```{r explore, echo=FALSE,eval=FALSE}
+library(DataExplorer)
+create_report(donnees)
+
+library(dataMaid)
+makeCodebook(donnees)
+
+```
+
+```{r explore, analyse pour voir si les variables voulu sont la }
+
+select(donnees, all_of(c("Temperature...C.", "Period"? ETC...))) 
+
+```
+
+```{r explore,remplace les nom des colonnes}
+dplyr::rename(donnees,
+      
+        "Temperature °C" = Temperature...C.)
+
+
+#Si les noms de colonnes comportent des espaces ou des caractères spéciaux, on peut les entourer de guillemets (") ou de quotes inverses (`) :
+
+#tmp <- dplyr::rename(flights, 
+#              "retard départ" = dep_delay,
+ #             "retard arrivée" = arr_delay)
+#select(tmp, `retard départ`, `retard arrivée`)
+
+```
+
+# Graphique par jour
+## Temperature (°C)
+
+```{r valeurs_Temperature}
+
+skim(donnees$Temperature...C.)
+summary(donnees$Temperature...C.)
+
+
+val0=summarySE(data=donnees,measurevar = "Temperature...C.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees2,measurevar = "Temperature...C.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val1,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+
+```
+
+```
+val1=summarySE(data=donnees,measurevar = "Temperature...C.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "Temperature...C.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "Temperature...C.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature...C.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature...C.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature...C.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Temperature...C.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Temperature...C.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Temperature...C.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Temperature...C.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Temperature...C.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+### FIGURE Temperature (°C)
+```{r figure_Temperature}
+library(ggh4x)
+#library(ggthemes)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigT= ggplot(data=donnees, aes(x = monTemps, y = Temperature...C., color = interaction(Period,Sensor))) +
+    
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 0.004, lty = "dotted") +
+  
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+  
+labs(y = " Temperature (°C)\n",
+     x = "\nDate" )
+ 
+print(FigT) 
+ggplotly(FigT)
+# NOT  RUN {} 
+
+
+```
+```{r figures_Temperature_boxplot}
+library(scales)
+
+P1=ggplot(data=donnees, aes(x = Sensor, y = Temperature...C., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = " Temperature (°C)\n") + 
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+
+P3=ggplot(data=donnees, aes(x = Sensor, y = Temperature...C., fill=as.factor(Sensor)))+
+   scale_fill_brewer(palette="Set1","Legende", labels= c("Capteur 1", "Capteur 2")) +
+   geom_boxplot()+
+scale_x_continuous(limits=c(0,3), breaks=seq(1,2,1),expand = c(0, 0)) +
+  theme_classic()+
+  labs(y = " Temperature (°C)\n",
+       x = "\nSensor") 
+P4=P3 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+plot_grid(P2, P4)
+ggplotly((plot_grid(P2, P4))) 
+```
+
+
+
+
+## Humidity (%RH)
+```{r valeurs_Humidity}
+
+skim(donnees$Humidity...RH.)
+summary(donnees$Humidity...RH.)
+
+
+val0=summarySE(data=donnees,measurevar = "Humidity...RH.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "Humidity...RH.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "Humidity...RH.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "Humidity...RH.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Humidity...RH.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Humidity...RH.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Humidity...RH.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Humidity...RH.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Humidity...RH.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Humidity...RH.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Humidity...RH.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Humidity...RH.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+### FIGURE Humidity (%RH)
+```{r figure_Humidity}
+library(ggh4x)
+#library(ggthemes)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigH= ggplot(data=donnees, aes(x = monTemps, y = Humidity...RH., color = interaction(Period,Sensor))) +
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 0.004, lty = "dotted") +
+  
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+
+labs(y = " Humidité (%RH)\n",
+     x = "\nDate" )
+ 
+print(FigH) 
+ggplotly(FigH)
+# NOT  RUN {} 
+```
+```{r figures_Humidity_boxplot}
+library(scales)
+
+P1=ggplot(data=donnees, aes(x = Sensor, y = Humidity...RH., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = " Humidité (%RH)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+
+P3=ggplot(data=donnees, aes(x = Sensor, y = Humidity...RH., fill=as.factor(Sensor)))+
+   scale_fill_brewer(palette="Set1","Legende", labels= c("Capteur 1", "Capteur 2")) +
+   geom_boxplot()+
+scale_x_continuous(limits=c(0,3), breaks=seq(1,2,1),expand = c(0, 0)) +
+  theme_classic()+
+  labs(y = " Humidité (%RH)\n",
+       x = "\nSensor") 
+P4=P3 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+plot_grid(P2, P4)
+ggplotly((plot_grid(P2, P4))) 
+```
+
+## Pressure (hPa)
+```{r valeurs_Pressure}
+
+skim(donnees$Pressure..hPa.)
+summary(donnees$Pressure..hPa.)
+
+
+val0=summarySE(data=donnees,measurevar = "Pressure..hPa.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "Pressure..hPa.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "Pressure..hPa.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "Pressure..hPa.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Pressure..hPa.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Pressure..hPa.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Pressure..hPa.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "Pressure..hPa.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Pressure..hPa.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Pressure..hPa.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Pressure..hPa.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "Pressure..hPa.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+### FIGURE Pressure (hPa)
+```{r figure_Pressure}
+library(ggh4x)
+#library(ggthemes)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigP= ggplot(data=donnees, aes(x = monTemps, y = Pressure..hPa., color = interaction(Period,Sensor))) +
+    
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 0.004, lty = "dotted") +
+
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+
+labs(y = "Pression (hPa)\n",
+     x = "\nDate" )
+ 
+print(FigP) 
+#ggplotly(FigP)
+# NOT  RUN {} 
+```
+
+
+
+## NO2 (µg/m3)
+```{r valeurs_NO2}
+
+skim(donnees$NO2..µg.m3.)
+summary(donnees$NO2..µg.m3.)
+
+
+val0=summarySE(data=donnees,measurevar = "NO2..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "NO2..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "NO2..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "NO2..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "NO2..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "NO2..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO2..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO2..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+### FIGURE NO2 (µg/m3)
+```{r figure_NO2}
+library(ggh4x)
+#library(ggthemes)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigNO2= ggplot(data=donnees, aes(x = monTemps, y = NO2..µg.m3., color = interaction(Period,Sensor))) +
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 25, lty = "dotted") +
+
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+
+labs(y = " NO2 (µg/m3)\n",
+     x = "\nDate" )
+ 
+print(FigNO2) 
+ggplotly(FigNO2)
+# NOT  RUN {} 
+```
+```{r figures_NO2_boxplot}
+library(scales)
+
+P1=ggplot(data=donnees, aes(x = Sensor, y = NO2..µg.m3., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = " NO2 (µg/m3)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+
+P3=ggplot(data=donnees, aes(x = Sensor, y = NO2..µg.m3., fill=as.factor(Sensor)))+
+   scale_fill_brewer(palette="Set1","Legende", labels= c("Capteur 1", "Capteur 2")) +
+   geom_boxplot()+
+scale_x_continuous(limits=c(0,3), breaks=seq(1,2,1),expand = c(0, 0)) +
+  theme_classic()+
+  labs(y = " NO2 (µg/m3)\n",
+       x = "\nSensor") 
+P4=P3 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+plot_grid(P2, P4)
+ggplotly((plot_grid(P2, P4))) 
+```
+
+
+
+## CO (mg/m3)
+```{r valeurs_CO}
+
+skim(donnees$CO..mg.m3.)
+summary(donnees$CO..mg.m3.)
+
+
+val0=summarySE(data=donnees,measurevar = "CO..mg.m3.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "CO..mg.m3.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "CO..mg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "CO..mg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "CO..mg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "CO..mg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO..mg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO..mg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO..mg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO..mg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO..mg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "CO..mg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO..mg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO..mg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO..mg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO..mg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO..mg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "CO..mg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+### FIGURE CO (mg/m3)
+```{r figure_CO}
+library(ggh4x)
+#library(ggthemes)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigCO= ggplot(data=donnees, aes(x = monTemps, y = CO..mg.m3., color = interaction(Period,Sensor))) +
+    
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 0.004, lty = "dotted") +
+  
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+  
+labs(y = " CO (mg/m3)\n",
+     x = "\nDate" )
+ 
+print(FigCO) 
+ggplotly(FigCO)
+# NOT  RUN {} 
+```
+```{r figures_CO_boxplot}
+library(scales)
+
+P1=ggplot(data=donnees, aes(x = Sensor, y = CO..mg.m3., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+
+  theme_classic()+
+  labs(y = " CO (mg/m3)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+
+P3=ggplot(data=donnees, aes(x = Sensor, y = CO..mg.m3., fill=as.factor(Sensor)))+
+   scale_fill_brewer(palette="Set1","Legende", labels= c("Capteur 1", "Capteur 2")) +
+   geom_boxplot()+
+scale_x_continuous(limits=c(0,3), breaks=seq(1,2,1),expand = c(0, 0)) +
+  theme_classic()+
+  labs(y = " CO (mg/m3)\n",
+       x = "\nSensor") 
+P4=P3 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+plot_grid(P2, P4)
+ggplotly((plot_grid(P2, P4))) 
+```
+
+
+## O3 (µg/m3)
+```{r valeurs_O3}
+
+skim(donnees$O3..µg.m3.)
+summary(donnees$O3..µg.m3.)
+
+
+val0=summarySE(data=donnees,measurevar = "O3..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "O3..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "O3..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "O3..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "O3..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "O3..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "O3..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "O3..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+### FIGURE O3 (µg/m3)
+```{r figure_O3}
+library(ggh4x)
+#library(ggthemes)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigO3= ggplot(data=donnees, aes(x = monTemps, y = O3..µg.m3., color = interaction(Period,Sensor))) +
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 0.004, lty = "dotted") +
+  
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+
+labs(y = " O3 (µg/m3)\n",
+     x = "\nDate" )
+ 
+print(FigO3) 
+ggplotly(FigO3)
+# NOT  RUN {} 
+```
+```{r figures_O3_boxplot}
+library(scales)
+
+P1=ggplot(data=donnees, aes(x = Sensor, y = O3..µg.m3., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = " O3 (µg/m3)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+
+P3=ggplot(data=donnees, aes(x = Sensor, y = O3..µg.m3., fill=as.factor(Sensor)))+
+   scale_fill_brewer(palette="Set1","Legende", labels= c("Capteur 1", "Capteur 2")) +
+   geom_boxplot()+
+scale_x_continuous(limits=c(0,3), breaks=seq(1,2,1),expand = c(0, 0)) +
+  theme_classic()+
+  labs(y = " O3 (µg/m3)\n",
+       x = "\nSensor") 
+P4=P3 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+plot_grid(P2, P4)
+ggplotly((plot_grid(P2, P4))) 
+```
+
+
+
+## NO (µg/m3)
+```{r valeurs_NO}
+
+skim(donnees$NO..µg.m3.)
+summary(donnees$NO..µg.m3.)
+
+
+val0=summarySE(data=donnees,measurevar = "NO..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "NO..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "NO..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "NO..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "NO..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "NO..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "NO..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "NO..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+### FIGURE NO (µg/m3)
+```{r figure_NO}
+library(ggh4x)
+#library(ggthemes)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigNO= ggplot(data=donnees, aes(x = monTemps, y = NO..µg.m3., color = interaction(Period,Sensor))) +
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 0.004, lty = "dotted") +
+  
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+
+labs(y = " NO (µg/m3)\n",
+     x = "\nDate" )
+ 
+print(FigNO) 
+ggplotly(FigNO)
+# NO..µg.m3.T  RUN {} 
+```
+```{r figures_NO_boxplot}
+library(scales)
+
+P1=ggplot(data=donnees, aes(x = Sensor, y = NO..µg.m3., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = " NO (µg/m3)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+
+P3=ggplot(data=donnees, aes(x = Sensor, y = NO..µg.m3., fill=as.factor(Sensor)))+
+   scale_fill_brewer(palette="Set1","Legende", labels= c("Capteur 1", "Capteur 2")) +
+   geom_boxplot()+
+scale_x_continuous(limits=c(0,3), breaks=seq(1,2,1),expand = c(0, 0)) +
+  theme_classic()+
+  labs(y = " NO (µg/m3)\n",
+       x = "\nSensor") 
+P4=P3 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+plot_grid(P2, P4)
+ggplotly((plot_grid(P2, P4))) 
+```
+
+
+## P1 (µg/m3)
+```{r valeurs_P1}
+
+skim(donnees$P1..µg.m3.)
+summary(donnees$P1..µg.m3.)
+
+
+val0=summarySE(data=donnees,measurevar = "P1..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "P1..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "P1..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "P1..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "P1..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "P1..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P1..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P1..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+### FIGURE P1 (µg/m3)
+```{r figure_P1}
+library(ggh4x)
+#library(ggthemes)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigP1= ggplot(data=donnees, aes(x = monTemps, y = P1..µg.m3., color = interaction(Period,Sensor))) +
+    
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 0.004, lty = "dotted") +
+  
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+  
+labs(y = " PM1 (µg/m3)\n",
+     x = "\nDate" )
+ 
+print(FigP1) 
+ggplotly(FigP1)
+# NOT  RUN {} 
+```
+```{r figures_P1_boxplot}
+library(scales)
+
+P1=ggplot(data=donnees, aes(x = Sensor, y = P1..µg.m3., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = "PM1 (µg/m3)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+
+P3=ggplot(data=donnees, aes(x = Sensor, y = P1..µg.m3., fill=as.factor(Sensor)))+
+   scale_fill_brewer(palette="Set1","Legende", labels= c("Capteur 1", "Capteur 2")) +
+   geom_boxplot()+
+scale_x_continuous(limits=c(0,3), breaks=seq(1,2,1),expand = c(0, 0)) +
+  theme_classic()+
+  labs(y = "PM1 (µg/m3)\n",
+       x = "\nSensor") 
+P4=P3 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+plot_grid(P2, P4)
+ggplotly((plot_grid(P2, P4))) 
+```
+
+
+## P25 (µg/m3)
+```{r valeurs_P25}
+
+skim(donnees$P25..µg.m3.)
+summary(donnees$P25..µg.m3.)
+
+
+val0=summarySE(data=donnees,measurevar = "P25..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "P25..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "P25..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "P25..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "P25..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "P25..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P25..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P25..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+### FIGURE P25 (µg/m3)
+```{r figure_P25..µg.m3.}
+library(ggh4x)
+#library(ggthemes)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigP25= ggplot(data=donnees, aes(x = monTemps, y =P25..µg.m3. , color = interaction(Period,Sensor))) +
+  geom_point(size= 1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+  
+geom_hline(yintercept = 15, size=1, lty = "dotted") +  
+  
+ theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+ 
+
+
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+
+labs(y = " PM2.5  (µg/m3)\n",
+     x = "\nDate" )
+ 
+print(FigP25) 
+ggplotly(FigP25)
+# NOT  RUN {} 
+```
+```{r figures_P25_boxplot}
+library(scales)
+
+P1=ggplot(data=donnees, aes(x = Sensor, y = P25..µg.m3., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = "PM2.5  (µg/m3)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+
+P3=ggplot(data=donnees, aes(x = Sensor, y = P25..µg.m3., fill=as.factor(Sensor)))+
+   scale_fill_brewer(palette="Set1","Legende", labels= c("Capteur 1", "Capteur 2")) +
+   geom_boxplot()+
+scale_x_continuous(limits=c(0,3), breaks=seq(1,2,1),expand = c(0, 0)) +
+  theme_classic()+
+  labs(y = "PM2.5  (µg/m3)\n",
+       x = "\nSensor") 
+P4=P3 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+P5=plot_grid(P2, P4)
+
+plot_grid(P2, P4)
+ggplotly((plot_grid(P2, P4))) 
+```
+
+
+
+## P10 (µg/m3)
+```{r valeurs_P10}
+
+skim(donnees$P10..µg.m3.)
+summary(donnees$P10..µg.m3.)
+
+
+val0=summarySE(data=donnees,measurevar = "P10..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donnees,measurevar = "P10..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donnees,measurevar = "P10..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3=summarySE(data=donnees,measurevar = "P10..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val3,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3A=summarySE(data=donnees,measurevar = "P10..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val3A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val3B=summarySE(data=donnees,measurevar = "P10..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val3B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 1"
+ 
+val4=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val4,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val5=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val5,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val6=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val6,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val7,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7A=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val7A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val7B=summarySE(data=donnees[donnees$Sensor == 1,],measurevar = "P10..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val7B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+"Sensor 2"
+ 
+val8=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+ DT::datatable(
+  val8,
+   fillContainer = FALSE, options = list(pageLength = 10))
+
+ val9=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+DT::datatable(
+  val9,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val10=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val10,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10..µg.m3.",groupvars = c("Temperature...C."), na.rm=TRUE)
+ DT::datatable(
+    val11,
+    fillContainer = FALSE, options = list(pageLength = 10))
+
+ val11A=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10..µg.m3.",groupvars = c("Humidity...RH."), na.rm=TRUE)
+ DT::datatable(
+    val11A,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val11B=summarySE(data=donnees[donnees$Sensor == 2,],measurevar = "P10..µg.m3.",groupvars = c("Pressure..hPa."), na.rm=TRUE)
+ DT::datatable(
+    val11B,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+```
+
+### FIGURE P10 (µg/m3)
+```{r figure_P10}
+library(ggh4x)
+#library(ggthemes)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+FigP10= ggplot(data=donnees, aes(x = monTemps, y = P10..µg.m3., color = interaction(Period,Sensor))) +
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+
+geom_hline(yintercept = 45, size=1, lty = "dotted") +
+
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))+
+
+labs(y = " PM10  (µg/m3)\n",
+     x = "\nDate" )
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+```{r figures_P10_boxplot}
+library(scales)
+
+P1=ggplot(data=donnees, aes(x = Sensor, y = P10..µg.m3., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = "PM10 (µg/m3)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+
+P3=ggplot(data=donnees, aes(x = Sensor, y = P10..µg.m3., fill=as.factor(Sensor)))+
+   scale_fill_brewer(palette="Set1","Legende", labels= c("Capteur 1", "Capteur 2")) +
+   geom_boxplot()+
+scale_x_continuous(limits=c(0,3), breaks=seq(1,2,1),expand = c(0, 0)) +
+  theme_classic()+
+  labs(y = "PM10 (µg/m3)\n",
+       x = "\nSensor") 
+P4=P3 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+plot_grid(P2, P4)
+ggplotly((plot_grid(P2, P4))) 
+```
+
+
+
+# graphique Variation particule-gaz en fonction des conditions météo 
+
+
+## FIGURE Temperature (°C)
+```{r figuresTemperature}
+library(cowplot)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+P0=ggplot(data=donnees, aes(x = Temperature...C., y = Temperature...C., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " Temperature (°C)\n",
+     x = "\nTemperature  (°C)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")
+#labs(y = " PM10  (µg/mol3)\n",
+ #    x = "\nDate" ) 
+P1=ggplot(data=donnees, aes(x = Humidity...RH., y = Temperature...C., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " Temperature (°C)\n",
+     x = "\nHumidity (%RH)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+  
+P2=ggplot(data=donnees, aes(x = Pressure..hPa., y = Temperature...C., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " Temperature (°C)\n",
+     x = "\nPressure (hPa)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 9, align = "v")
+
+
+# NOT  RUN {} 
+
+
+```
+
+## FIGURE NO2 (µg/m3)
+```{r figuresNO2}
+library(cowplot)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+P0=ggplot(data=donnees, aes(x = Temperature...C., y = NO2..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " NO2 (µg/m3)\n",
+     x = "\nTemperature (°c)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")
+#labs(y = " PM10  (µg/mol3)\n",
+ #    x = "\nDate" ) 
+P1=ggplot(data=donnees, aes(x = Humidity...RH., y = NO2..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " NO2 (µg/m3)\n",
+     x = "\nHumidity (%RH)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+  
+P2=ggplot(data=donnees, aes(x = Pressure..hPa., y = NO2..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+   
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " NO2 (µg/m3)\n",
+     x = "\nPressure (hPa)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 10, align = "hv")
+
+```
+
+
+## FIGURE CO (mg/m3)
+```{r figuresCO}
+library(cowplot)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+P0=ggplot(data=donnees, aes(x = Temperature...C., y = CO..mg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " CO (mg/m3)\n",
+     x = "\nTemperature (°c)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")
+
+P1=ggplot(data=donnees, aes(x = Humidity...RH., y = CO..mg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " CO (mg/m3)\n",
+     x = "\nHumidity (%RH)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+
+P2=ggplot(data=donnees, aes(x = Pressure..hPa., y = CO..mg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " CO (mg/m3)\n",
+     x = "\nPressure (hPa)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+
+
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 10, align = "hv")
+
+```
+
+
+## FIGURE O3 (µg/m3)
+```{r figuresO3}
+library(cowplot)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+P0=ggplot(data=donnees, aes(x = Temperature...C., y = O3..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " O3 (µg/m3)\n",
+     x = "\nTemperature (°c)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")
+
+P1=ggplot(data=donnees, aes(x = Humidity...RH., y = O3..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " O3 (µg/m3)\n",
+     x = "\nHumidity (%RH)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+  
+P2=ggplot(data=donnees, aes(x = Pressure..hPa., y = O3..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " O3 (µg/m3)\n",
+     x = "\nPressure (hPa)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 10, align = "hv")
+```
+
+
+## FIGURE NO (µg/m3)
+```{r figuresNO}
+library(cowplot)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+P0=ggplot(data=donnees, aes(x = Temperature...C., y = NO..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " NO (µg/m3)\n",
+     x = "\nTemperature (°c)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")
+
+P1=ggplot(data=donnees, aes(x = Humidity...RH., y = NO..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " NO (µg/m3)\n",
+     x = "\nHumidity (%RH)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+  
+P2=ggplot(data=donnees, aes(x = Pressure..hPa., y = NO..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " NO (µg/m3)\n",
+     x = "\nPressure (hPa)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+
+A=plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 10, align = "hv")
+```
+
+## FIGURE P1 (µg/m3)
+```{r figuresP1}
+library(cowplot)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+P0=ggplot(data=donnees, aes(x = Temperature...C., y = P1..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " PM1 (µg/m3)\n",
+     x = "\nTemperature (°c)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")
+
+P1=ggplot(data=donnees, aes(x = Humidity...RH., y = P1..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " PM1 (µg/m3)\n",
+     x = "\nHumidity (%RH)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+  
+P2=ggplot(data=donnees, aes(x = Pressure..hPa., y = P1..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " PM1 (µg/m3)\n",
+     x = "\nPressure (hPa)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 10, align = "hv")
+```
+
+## FIGURE P25 (µg/m3)
+```{r figuresP25}
+library(cowplot)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+P0=ggplot(data=donnees, aes(x = Temperature...C., y = P25..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " PM2.5 (µg/m3)\n",
+     x = "\nTemperature (°c)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")
+
+P1=ggplot(data=donnees, aes(x = Humidity...RH., y = P25..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " PM2.5 (µg/m3)\n",
+     x = "\nHumidity (%RH)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+  
+P2=ggplot(data=donnees, aes(x = Pressure..hPa., y = P25..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " PM2.5  (µg/m3)\n",
+     x = "\nPressure (hPa)" )+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 10, align = "hv")
+
+```
+
+
+## FIGURE P10 (µg/m3)
+```{r figuresP10}
+library(cowplot)
+donnees$monTemps <- lubridate::ymd_hms(donnees$DateTime)
+
+P0=ggplot(data=donnees, aes(x = Temperature...C., y = P10..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " PM10 (µg/m3)\n",
+     x = "\nTemperature (°c)" )+
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0)) +
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")
+
+
+P1=ggplot(data=donnees, aes(x = Humidity...RH., y = P10..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+   labs(y = " PM10 (µg/m3)\n",
+     x = "\nHumidity (%RH)" )+
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))  +
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+
+  
+P2=ggplot(data=donnees, aes(x = Pressure..hPa., y = P10..µg.m3., color= interaction(Period,Sensor))) +
+  geom_point(size=1)+
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+theme_classic()+
+  labs(y = " PM10 (µg/m3)\n",
+     x = "\nPressure (hPa)" )+
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0)) + 
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "right")  
+
+
+plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 10, align = "hv")
+#ggplotly((plot_grid(P0, P1, P2, nrow = 3, labels = "AUTO", label_size = 10, align = "hv")))
+```
+
+# La suite sur le Report 2
+# FIN REPORT
+
+

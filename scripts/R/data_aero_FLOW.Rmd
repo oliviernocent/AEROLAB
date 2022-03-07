@@ -1,0 +1,787 @@
+---
+title: "Rapport mesure de la qualité de l'air durant l'Ultra Trail scientifique de Clécy 2021"
+author: "Quentin Martinet"
+date: "01/12/2021"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, eval=FALSE, include=FALSE}
+rmarkdown::render("reportGlobal.Rmd", "html_document")
+
+rmarkdown::render("reportGlobal.Rmd", "html_document", encoding = "UTF-8")
+
+rmarkdown::render("reportGlobal.Rmd", "html_document", encoding = "UTF-8", quiet = TRUE)
+
+rmarkdown::render("reportGlobal.Rmd", "word_document", encoding = "UTF-8", quiet = TRUE)
+
+rmarkdown::render("reportGlobal.Rmd", "pdf_document", encoding = "UTF-8", quiet = TRUE)
+
+```
+
+```{r library,echo=FALSE,message=FALSE}
+require(ggplot2)
+require(plyr)
+require(car)
+library(scales)
+library(multcomp)
+library(nlme)
+library(cowplot)
+library(emmeans)
+library(cowplot)
+library(Rmisc)
+library(plotly)
+library(dplyr)
+library(lubridate)
+library(DT)
+library(ggridges)
+library(ggpubr)
+library(ggh4x)
+library(ggalt)
+library(waffle)
+library(ggdist)
+library(ggforce)
+library(ggtext)
+library(summariser)
+library(skimr)
+library(plotly)
+```
+
+
+# Protocol and variables
+
+
+## Protocol
+
+Mesure réalisée avec le capteur FLOW porter sur Quentin Martinet ou posé a un enroit fixe
+
+## Variables
+
+
+- Date
+- Temps en seconde depuis le démarrage de l'acquisition
+- Periode
+    Jour étant du lever au coucher du soleil
+    Nuit étant du coucher au lever du soleil
+- Heure
+- Seconde
+-Conditions
+  - Température (°C)
+  - Humidité (%RH)
+  - Pression (hPa)
+- Mesures de gaz (ppm)
+  - NO2
+  - VOC
+- Mesures de particules (en µg/mol3)
+  - PM10
+  - PM2.5
+    
+
+### independant
+
+* To be completed
+
+
+# DATA
+
+```{r donneesFLOW, echo=FALSE}
+donneesFLOW <- read.table( file = "../../data/2021-11-11/FLOW/user_measures_20211110_20211122_1.converted_full.csv", dec = '.', sep = ',', head = TRUE, fileEncoding="UTF-8" ) 
+# option pour l'anova
+options(contrasts=c("contr.sum","contr.poly"))
+
+#donnees <- read.table( file = "../../data/2021-11-11/AQT530/DATA_full.csv", dec = '.', sep = ',', head = TRUE, fileEncoding="UTF-8" ) 
+# option pour l'anova
+#options(contrasts=c("contr.sum","contr.poly"))
+
+DT::datatable(
+  donneesFLOW,
+  fillContainer = FALSE, options = list(pageLength = 10)
+)
+```
+
+```{r explore, echo=FALSE,eval=FALSE}
+library(DataExplorer)
+create_report(donnees)
+
+library(dataMaid)
+makeCodebook(donnees)
+
+```
+
+
+# Graphique par jour
+## NO2 (µg/m3)
+```{r valeurs_NO2}
+
+skim(donneesFLOW$NO2..µg.m3.)
+summary(donneesFLOW$NO2..µg.m3.)
+
+
+val0=summarySE(data=donneesFLOW,measurevar = "NO2..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donneesFLOW,measurevar = "NO2..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donneesFLOW,measurevar = "NO2..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+```
+
+### FIGURE NO2 (µg/m3)
+```{r figure_NO2}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigNO2= ggplot(data=donneesFLOW, aes(x = monTemps, y = NO2..µg.m3., color = Period)) +
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour", "Nuit")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 25, lty = "dotted") +
+
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+
+labs(y = " NO2 (µg/m3)\n",
+     x = "\nDate" )
+ 
+print(FigNO2) 
+ggplotly(FigNO2)
+# NOT  RUN {} 
+```
+```{r figures_NO2_boxplot}
+library(scales)
+
+P1=ggplot(data=donneesFLOW, aes(x = Period , y = NO2..µg.m3., fill = Period))+
+scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = " NO2 (µg/m3)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+print(P2)
+#ggplotly((plot_grid(P2, P4))) 
+
+```
+
+
+## VOC (µg/m3)
+```{r valeurs_VOC}
+
+skim(donneesFLOW$VOC..ppb.)
+summary(donneesFLOW$VOC..ppb.)
+
+
+val0=summarySE(data=donneesFLOW,measurevar = "VOC..ppb.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donneesFLOW,measurevar = "VOC..ppb.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donneesFLOW,measurevar = "VOC..ppb.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+```
+
+### FIGURE VOC (ppb)
+```{r figure_VOC}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigVOC= ggplot(data=donneesFLOW, aes(x = monTemps, y = VOC..ppb., color = Period)) +
+    
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour", "Nuit")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 0.004, lty = "dotted") +
+  
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+  
+labs(y = " VOC (ppb)\n",
+     x = "\nDate" )
+ 
+print(FigVOC) 
+ggplotly(FigVOC)
+# NOT  RUN {} 
+```
+```{r figures_VOC_boxplot}
+library(scales)
+
+P1=ggplot(data=donneesFLOW, aes(x = Period, y = VOC..ppb., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+
+  theme_classic()+
+  labs(y = " VOC (ppb)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+print(P2)
+#ggplotly((plot_grid(P2, P4))) 
+```
+
+
+## P10 (µg/m3)
+```{r valeurs_P10}
+
+skim(donneesFLOW$P10..µg.m3.)
+summary(donneesFLOW$P10..µg.m3.)
+
+
+val0=summarySE(data=donneesFLOW,measurevar = "P10..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donneesFLOW,measurevar = "P10..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donneesFLOW,measurevar = "P10..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+```
+
+### FIGURE P10 (µg/m3)
+```{r figure_P10}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = monTemps, y = P10..µg.m3., color = Period)) +
+  geom_point(size=1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour", "Nuit")) +  
+theme(legend.position = "top")+
+
+geom_hline(yintercept = 45, size=1, lty = "dotted") +
+
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))+
+# 30 ligne sup avec ce filtre
+labs(y = " PM10  (µg/m3)\n",
+     x = "\nDate" )
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+```{r figures_P10_boxplot}
+library(scales)
+
+P1=ggplot(data=donneesFLOW, aes(x = Period, y = P10..µg.m3., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = "PM10 (µg/m3)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+print(P2)
+#ggplotly((plot_grid(P2, P4))) 
+```
+
+
+## P25 (µg/m3)
+```{r valeurs_P25}
+
+skim(donneesFLOW$P25..µg.m3.)
+summary(donneesFLOW$P25..µg.m3.)
+
+
+val0=summarySE(data=donneesFLOW,measurevar = "P25..µg.m3.",groupvars = c("Period"), na.rm=TRUE)
+DT::datatable(
+  val0,
+  fillContainer = FALSE, options = list(pageLength = 10))
+
+val1=summarySE(data=donneesFLOW,measurevar = "P25..µg.m3.",groupvars = c("Date"), na.rm=TRUE)
+ DT::datatable(
+    val1,
+    fillContainer = FALSE, options = list(pageLength = 10))
+ 
+val2=summarySE(data=donneesFLOW,measurevar = "P25..µg.m3.",groupvars = c("Time"), na.rm=TRUE)
+ DT::datatable(
+    val2,
+    fillContainer = FALSE, options = list(pageLength = 10))
+```
+
+### FIGURE P25 (µg/m3)
+```{r figure_P25..µg.m3.}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP25= ggplot(data=donneesFLOW, aes(x = monTemps, y =P25..µg.m3. , color = Period)) +
+  geom_point(size= 1) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+  
+geom_hline(yintercept = 15, size=1, lty = "dotted") +  
+  
+ theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour", "Nuit")) +  
+theme(legend.position = "top")+ 
+#scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
+
+labs(y = " PM2.5  (µg/m3)\n",
+     x = "\nDate" )
+ 
+print(FigP25) 
+ggplotly(FigP25)
+# NOT  RUN {} 
+```
+```{r figures_P25_boxplot}
+library(scales)
+
+P1=ggplot(data=donneesFLOW, aes(x = Period, y = P25..µg.m3., fill=Period))+
+  scale_fill_brewer(palette="Set1","Periode", labels= c("Jour", "Nuit")) +
+  geom_boxplot()+
+#scale_x_continuous(limits=c("A","C"), breaks=seq("A","C",1),expand = c(0, 0))
+  theme_classic()+
+  labs(y = "PM2.5  (µg/m3)\n")+
+ scale_x_discrete(name ="Periode", 
+                  limits=c("Jour","Nuit"))
+P2=P1 + stat_summary(fun.y=mean, geom="point", shape=20, size=5)
+
+print(P2)
+#ggplotly((plot_grid(P2, P4))) 
+```
+
+
+# Graphique toutes les particules (PM2.5, PM10)
+```{r figure_Tous les particules}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes( x = monTemps, color = interaction(Period,Sensor))) +
+    
+  geom_point(aes(y = P25..µg.m3.),size=1, color = "darkred") + 
+  geom_point(aes(y = P10..µg.m3.),size=1, color="darkblue",) +
+  
+  #geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+#   scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+# theme(legend.position = "top")+
+#   
+geom_hline(yintercept = 45, lty = "dotted") +
+geom_hline(yintercept = 15, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+  
+labs(y = " Particules (µg/m3) \n",
+     x = "\nDate " )
+
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+# Graphique des correlations entre les gazs et particules
+## Graphique pour X=NO2
+### FIGURE NO2/VOC
+```{r figure_NO2/VOC}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = NO2..µg.m3., y = VOC..ppb., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n NO2 (µg/m3)",
+     y = " VOC (ppb)\n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+### FIGURE NO2/PM2.5
+```{r figure_NO2/P25}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = NO2..µg.m3., y = P25..µg.m3., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n NO2 (µg/m3)",
+     y = " PM2.5 (µg/m3)\n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+### FIGURE NO2/PM10
+```{r figure_NO2/P10}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = NO2..µg.m3., y = P10..µg.m3., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n NO2 (µg/m3)",
+     y = " PM10 (µg/m3)\n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+## Graphique pour X=VOC
+### FIGURE VOC/NO2
+```{r figure_VOC/NO2}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = VOC..ppb., y = NO2..µg.m3., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n VOC (ppb)",
+     y = "NO2 (µg/m3) \n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+### FIGURE VOC/PM2.5
+```{r figure_VOC/P25}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = VOC..ppb., y = P25..µg.m3., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n VOC (ppb)",
+     y = " PM2.5 (µg/m3)\n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+### FIGURE VOC/PM10
+```{r figure_VOC/P10}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = VOC..ppb., y = P10..µg.m3., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n VOC (ppb)",
+     y = " PM10 (µg/m3)\n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+## Graphique pour X=PM2.5
+### FIGURE PM2.5/NO2
+```{r figure_P25/NO2}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = P25..µg.m3., y = NO2..µg.m3., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n PM2.5 (µg/m3)",
+     y = "NO2 (µg/m3) \n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+### FIGURE PM2.5/VOC
+```{r figure_P25/VOC}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = P25..µg.m3., y = VOC..ppb., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n PM2.5 (µg/m3)",
+     y = " VOC (ppb) \n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+### FIGURE PM2.5/PM10
+```{r figure_P25/P10}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = P25..µg.m3., y = P10..µg.m3., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n PM2.5 (µg/m3)",
+     y = " PM10 (µg/m3)\n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+## Graphique pour X=PM10
+### FIGURE PM10/NO2
+```{r figure_P10/NO2}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = P10..µg.m3., y = NO2..µg.m3., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n PM10 (µg/m3)",
+     y = "NO2 (µg/m3) \n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+### FIGURE PM10/VOC
+```{r figure_P10/VOC}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = P10..µg.m3., y = VOC..ppb., color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n PM10 (µg/m3)",
+     y = " VOC (ppb) \n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+### FIGURE PM10/PM2.5
+```{r figure_P10/P25}
+library(ggh4x)
+#library(ggthemes)
+donneesFLOW$monTemps <- lubridate::ymd_hms(donneesFLOW$DateTime)
+
+FigP10= ggplot(data=donneesFLOW, aes(x = P10..µg.m3., y = P25..µg.m3. , color = interaction(Period))) +
+    
+  geom_point(size=1) +
+  #geom_point(aes(color=Sensor)) +
+  geom_smooth(method = "lm", se =TRUE, fullrange=FALSE, level=0.95, size = 2, color = "black",fill="blue" )+
+
+  theme_classic()+
+  scale_colour_brewer(palette = "Set1","Legende", labels= c("Jour_C1", "Nuit_C1", "Jour_C2", "Nuit_C2")) +  
+theme(legend.position = "top")+
+  
+#geom_hline(yintercept = 10, lty = "dotted") +
+#geom_vline(xintercept = 4, lty = "dotted") +
+  
+#scale_y_continuous(limits=c(0,2), breaks=seq(0,2,1), expand = c(0, 0))+
+#scale_x_continuous(limits=c(0,25), breaks=seq(0,25,5), expand = c(0, 0))+
+
+labs(x = "\n PM10 (µg/m3)",
+     y = " PM2.5 (µg/m3)\n")
+ 
+print(FigP10) 
+ggplotly(FigP10)
+# NOT  RUN {} 
+```
+
+#FIN REPORT

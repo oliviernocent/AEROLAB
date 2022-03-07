@@ -1,0 +1,62 @@
+---
+title: "Mesure de polluants - Ultra trail scientifique de Clécy"
+author: "Quentin Martinet"
+date: "30/11/2021"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    theme: flatly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Protocole
+
+
+
+# Variables
+
+- Numéro du capteur
+    + Capteur 1 : station centre Km 0
+    + Capteur 2 : station poste de secours Km 14
+- Date
+- Période
+    Jour étant du lever au coucher du soleil
+    Nuit étant du coucher au lever du soleil
+- Heure
+- Seconde
+- Conditions
+  - Température (°C)
+  - Humidité (%RH)
+  - Pression (hPa)
+- Mesures de gaz (ppm)
+  - NO2
+  - CO
+  - 03
+  - NO
+- Mesures de particules (en µg/mol3)
+  - PM1
+  - PM2.5
+  - PM10
+- Temps en seconde depuis le démarrage de l'acquisition (redemarre à 0 à chaque démarrage/mise sous tension)
+- UPT
+
+# Résumé
+
+```{r aq_data}
+aq_data <- read.table( file = "../../data/2021-11-11/DATA.csv", dec = '.', sep = ',', head = TRUE)
+summary(aq_data)
+```
+
+# Graphiques
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
