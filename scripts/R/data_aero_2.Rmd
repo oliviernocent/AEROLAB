@@ -1778,6 +1778,7 @@ theme(
     legend.text = element_text(face = "bold", size = 10),
     legend.title = element_text( face = "bold",size = 12, hjust = 0.5, vjust = 0.5),
     legend.position = "top",
+    #legend.position='none'
      #legend.key.size = unit(2, "cm"),
     #legend.key.width = unit(2,"cm") 
     )+
@@ -1809,7 +1810,7 @@ labs(x = "\nDate", y =  "PM2.5 (µg/m3)\n") +
 ##SUPPRESSION LIGNE DES AXES
       #axis.line.x = element_blank(),
       #axis.line.y = element_blank(),
-      ) 
+      ) +
   
     
 #geom_hline(yintercept = 0.004, lty = "dotted") +        
@@ -1819,7 +1820,7 @@ labs(x = "\nDate", y =  "PM2.5 (µg/m3)\n") +
 
 #scale_y_continuous(
    # labels = c("0", "10", "15"))
-#scale_y_continuous(limits=c(0,15), breaks=seq(0,15,2.5), expand = c(0, 0))
+scale_y_continuous(limits=c(0,50), breaks=seq(0,50,10), expand = c(0, 0))
 
 print(FigP25) 
 ggplotly(FigP25)
@@ -2009,7 +2010,7 @@ labs(x = "\nDate", y =  "PM10 (µg/m3)\n") +
 ##SUPPRESSION LIGNE DES AXES
       #axis.line.x = element_blank(),
       #axis.line.y = element_blank(),
-      ) 
+      ) +
   
     
 #geom_hline(yintercept = 0.004, lty = "dotted") +        
@@ -2022,7 +2023,7 @@ labs(x = "\nDate", y =  "PM10 (µg/m3)\n") +
 #scale_y_continuous(limits=c(0,15), breaks=seq(0,15,2.5), expand = c(0, 0))
   
 #scale_x_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
-#scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))+
+scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand = c(0, 0))
 
 print(FigP10) 
 ggplotly(FigP10)
