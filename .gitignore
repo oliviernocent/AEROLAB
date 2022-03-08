@@ -12,3 +12,10 @@ ehthumbs.db
 Thumbs.db
 *.pyc
 *.png
+*.pdf
+*.doc
+*.docx
+*.jpg
+*.mp4
+*.JPEG
+*.pptx
