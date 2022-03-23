@@ -26,6 +26,7 @@ from os import path
 import glob
 import pandas as pd
 from aerolab_utils import *
+from datetime import datetime
 
 if len(sys.argv) == 1:
     print('\nUSAGE: ./range-???????-G??-?????.csv. directory_name')
@@ -75,7 +76,7 @@ for file_name in glob.glob(folder_name + '/range-???????-G??-?????.csv'):
             'cadence [spm](/api/datatype/53/)' 
     ])
 
-    t0 = df.loc[0, 'DateTime']
+    #t0 = df.loc[0, 'Timestamp']
    
     # Inserts new columns
     df.insert(0, 'Sensor', [file_name[-14:-17]] * len(df.index)) # G01 = gilet 01
@@ -103,19 +104,19 @@ for file_name in glob.glob(folder_name + '/range-???????-G??-?????.csv'):
         print('Processing ', file_name, ': ', round(i*100/len(df.index)), '%', sep='', end='\r', flush=True)
         try:
             
-            # Computes timestamp : seconds elapsed time since 01/01/1970        on a deja
-           # df.loc[i, 'Timestamp'] = int(datetime.timestamp(datetime.fromisoformat(df.loc[i, 'DateTime'])))
-            
-            
-            
             #the ISO 8601 date string from 'Timestamp'
-           
-           
-           #FONCTION
-          
-          
-           # df.loc[i, 'DateTime'] =  df.loc[i, 'DateTime'][11:19]
-            
+            #df.loc[i, 'DateTime'] =  int(datetime.isoformat(datetime.fromtimestamp(df.loc[i, 'Timestamp'])))
+            df.loc[i, 'DateTime'] = pd.Timestamp.fromtimestamp(df.loc[i, 'Timestamp'])
+
+            timestamp = df.loc[i, 'Timestamp']
+            # convert to datetime
+            date_time = datetime.fromtimestamp(timestamp)
+
+            # convert timestamp to string in dd-mm-yyyy HH:MM:SS
+            str_date_time = date_time.strftime("%d-%m-%Y, %H:%M:%S")
+            print("Result 1:", str_date_time)
+
+
             # Extracts YYY-MM-DD from the ISO 8601 date string
             df.loc[i, 'Date'] = df.loc[i, 'DateTime'][0:10]
            
