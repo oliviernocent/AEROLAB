@@ -77,26 +77,24 @@ for file_name in glob.glob(folder_name + '/range-???????-G??-?????.csv'):
 
     t0 = df.loc[0, 'DateTime']
    
-
-
     # Inserts new columns
     df.insert(0, 'Sensor', [file_name[-14:-17]] * len(df.index)) # G01 = gilet 01
     df.insert(1, 'Smartbox', [file_name[-17:-23]] * len(df.index)) # numero de serie du boitier a 5 chiffres
    
-    df.insert(4, 'Timestamp', [0] * len(df.index)) # = time [s/256] deja présent
-    df.insert(2, 'DateTime', [0] * len(df.index))  # = temps iso
-    df.insert(3, 'Date', [0] * len(df.index)) # = DD-MM-YYYY
-    df.insert(3, 'Time', [0] * len(df.index)) # = Heure - minute - seconde
+   # df.insert(2, 'Timestamp', [0] * len(df.index)) # = time [s/256] deja présent
+    df.insert(3, 'DateTime', [0] * len(df.index))  # = temps iso
+    df.insert(4, 'Date', [0] * len(df.index)) # = DD-MM-YYYY
+    df.insert(5, 'Time', [0] * len(df.index)) # = Heure - minute - seconde
    
-    df.insert(1, 'Year', [0] * len(df.index)) # EXTRACT DATE YEAR
-    df.insert(1, 'Month', [0] * len(df.index)) # EXTRACT DATE MONTH
-    df.insert(1, 'Day', [0] * len(df.index)) # EXTRACT DATE DAY
+    df.insert(6, 'Year', [0] * len(df.index)) # EXTRACT DATE YEAR
+    df.insert(7, 'Month', [0] * len(df.index)) # EXTRACT DATE MONTH
+    df.insert(8, 'Day', [0] * len(df.index)) # EXTRACT DATE DAY
     
-    df.insert(1, 'Hour', [0]* len(df.index)) # EXTRACT TIME HOUR
-    df.insert(1, 'Minute', [0] * len(df.index)) # EXTRACT TIME MINUTE
-    df.insert(1, 'Second', [0] * len(df.index)) # EXTRACT TIME SECONDE
+    df.insert(9, 'Hour', [0]* len(df.index)) # EXTRACT TIME HOUR
+    df.insert(10, 'Minute', [0] * len(df.index)) # EXTRACT TIME MINUTE
+    df.insert(11, 'Second', [0] * len(df.index)) # EXTRACT TIME SECONDE
 
-    df.insert(5, 'TimeNumeric', [0] * len(df.index)) # temps utilisable numerique
+    df.insert(12, 'TimeNumeric', [0] * len(df.index)) # temps utilisable numerique
 
 
     # Parses rows to compute the values of the newly inserted cells
@@ -106,13 +104,17 @@ for file_name in glob.glob(folder_name + '/range-???????-G??-?????.csv'):
         try:
             
             # Computes timestamp : seconds elapsed time since 01/01/1970        on a deja
-            df.loc[i, 'Timestamp'] = int(datetime.timestamp(datetime.fromisoformat(df.loc[i, 'DateTime'])))
+           # df.loc[i, 'Timestamp'] = int(datetime.timestamp(datetime.fromisoformat(df.loc[i, 'DateTime'])))
             
-            # the ISO 8601 date string from 'Timestamp'
+            
+            
+            #the ISO 8601 date string from 'Timestamp'
+           
+           
            #FONCTION
           
           
-            df.loc[i, 'DateTime'] = df.loc[i, 'DateTime'][11:19]
+           # df.loc[i, 'DateTime'] =  df.loc[i, 'DateTime'][11:19]
             
             # Extracts YYY-MM-DD from the ISO 8601 date string
             df.loc[i, 'Date'] = df.loc[i, 'DateTime'][0:10]
