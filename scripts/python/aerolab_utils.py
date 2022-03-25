@@ -70,6 +70,37 @@ def get_solar_data(date: str, latitude: float, longitude: float) -> dict:
 
 
 
+def get_time_offset(date: str, latitude: float, longitude: float) -> int:
+    '''
+    Retrieves the time offset
+
+    Parameters:
+        date (string): ISO 8601 date.
+        latitude (float): expressed in decimal degrees.
+        longitude (float): expressed in decimal degrees.
+
+    Returns:
+        offset (int): time offset expressed in seconds.
+    '''
+    
+    parameters = {
+        'key': TIMEZONEDB_API_KEY,
+        'format': 'json',
+        'by': 'position',
+        'lat': latitude,
+        'lng': longitude,
+        'time': datetime.fromisoformat(date).timestamp()
+    }
+
+    response = requests.get('http://api.timezonedb.com/v2.1/get-time-zone', params=parameters)
+
+    if response.status_code == 200:
+        return response.json()['gmtOffset']
+    else:
+        print('ERROR ' + response.status_code + ': ' + response.reason)
+
+
+
 def ppm_to_mass(ppm, temperature, pressure, molar_mass):
     '''
     Computes the mass concentration of a given gas based on
