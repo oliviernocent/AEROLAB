@@ -11,16 +11,17 @@ __maintainer__ = "Olivier Nocent"
 __email__      = "olivier.nocent@univ-reims.fr"
 __status__     = "Experimental"
 
+from math import *
 from datetime import *
 import requests
-from requests.api import get
+#from requests.api import get
 from credentials import *
 
 
 
 def compute_duration(start: str, end: str) -> int:
     '''
-    Computes duration between two dates
+    Computes duration between two dates.
 
     Parameters:
         start (string): ISO 8601 start date.
@@ -37,7 +38,7 @@ def compute_duration(start: str, end: str) -> int:
 
 def get_solar_data(date: str, latitude: float, longitude: float) -> dict:
     '''
-    Retrieves solar paremeters (sunrise, sunset, day length, ...)
+    Retrieves solar paremeters (sunrise, sunset, day length, ...).
 
     Parameters:
         date (string): ISO 8601 date.
@@ -72,7 +73,7 @@ def get_solar_data(date: str, latitude: float, longitude: float) -> dict:
 
 def get_time_offset(date: str, latitude: float, longitude: float) -> int:
     '''
-    Retrieves the time offset
+    Retrieves the time offset of the corresponding time zone.
 
     Parameters:
         date (string): ISO 8601 date.
@@ -89,7 +90,7 @@ def get_time_offset(date: str, latitude: float, longitude: float) -> int:
         'by': 'position',
         'lat': latitude,
         'lng': longitude,
-        'time': datetime.fromisoformat(date).timestamp()
+        'time': int(datetime.fromisoformat(date).timestamp())
     }
 
     response = requests.get('http://api.timezonedb.com/v2.1/get-time-zone', params=parameters)
@@ -99,6 +100,38 @@ def get_time_offset(date: str, latitude: float, longitude: float) -> int:
     else:
         print('ERROR ' + response.status_code + ': ' + response.reason)
 
+
+
+def great_circle_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    '''
+    Computes the great circle distance between P1 and P2, two location  on Earth.
+
+    Parameters:
+        lat1 (float): latitude of P1, expressed in decimal degrees.
+        lon1 (float): longitude of P1, expressed in decimal degrees.
+        lat2 (float): latitude of P2, expressed in decimal degrees.
+        lon2 (float): longitude of P2, expressed in decimal degrees.
+
+    Returns:
+        distance (float), expressed in meters.
+    '''
+    lat1 = radians(lat1)
+    lat2 = radians(lat2)
+    dLon = radians(fabs(lon2-lon1))
+
+    cosLat1 = cos(lat1)
+    sinLat1 = sin(lat1)
+    cosLat2 = cos(lat2)
+    sinLat2 = sin(lat2)
+    cosDLon = cos(dLon)
+    sinDLon = sin(dLon)
+
+    A = cosLat2 * sinDLon
+    B = cosLat1 * sinLat2 - sinLat1 * cosLat2 * cosDLon
+
+    return 6371009 * atan2(sqrt(A * A + B * B),
+                     sinLat1 * sinLat2 + cosLat1 * cosLat2 * cosDLon)
+                     
 
 
 def ppm_to_mass(ppm, temperature, pressure, molar_mass):
