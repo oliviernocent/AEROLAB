@@ -14,7 +14,6 @@ __status__     = "Experimental"
 from math import *
 from datetime import *
 import requests
-#from requests.api import get
 from credentials import *
 
 
@@ -33,6 +32,32 @@ def compute_duration(start: str, end: str) -> int:
 
     duration = datetime.fromisoformat(end) - datetime.fromisoformat(start) 
     return duration.total_seconds()
+
+
+def format_duration(total: int) -> str:
+    '''
+    Converts a duration in seconds into a human readable string.
+
+    Parameters:
+        total (int): total duration in seconds
+
+    Returns:
+        human readable text (str)
+    '''
+    if total >= 60 * 60 * 24:
+        days  = total // (60 * 60 * 24)
+        hours = (total % (60 * 60 * 24)) // (60 * 60)
+        return f'{days} days and {hours} hours' 
+    elif total >= 60 * 60:
+        hours = total // (60 * 60)
+        minutes = (total % (60 * 60)) // 60
+        return f'{hours} hours and {minutes} minutes'
+    elif total >= 60:
+        minutes = total // 60
+        seconds = total % 60
+        return f'{minutes} minutes and {seconds} seconds'
+    else:
+        return f'{total} seconds' 
 
 
 
@@ -104,7 +129,9 @@ def get_time_offset(date: str, latitude: float, longitude: float) -> int:
 
 def great_circle_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     '''
-    Computes the great circle distance between P1 and P2, two location  on Earth.
+    Computes the great circle distance between two locations P1 and P2 on Earth
+    using the Vincenty formula.
+    https://en.wikipedia.org/wiki/Great-circle_distance#Formulas
 
     Parameters:
         lat1 (float): latitude of P1, expressed in decimal degrees.
@@ -134,7 +161,7 @@ def great_circle_distance(lat1: float, lon1: float, lat2: float, lon2: float) ->
                      
 
 
-def ppm_to_mass(ppm, temperature, pressure, molar_mass):
+def ppm_to_mass(ppm: float, temperature: float, pressure: float, molar_mass: float) -> float:
     '''
     Computes the mass concentration of a given gas based on
     https://www.lenntech.com/calculators/ppm/converter-parts-per-million.htm
@@ -150,3 +177,21 @@ def ppm_to_mass(ppm, temperature, pressure, molar_mass):
     '''
 
     return ppm * pressure * 0.1 * molar_mass / (8.31451 * (temperature + 273.15))
+
+
+
+def map(x: float, x_min: float, x_max: float, y_min: float, y_max: float) -> float:
+    '''
+    Re-maps linearly a number from one range to another.
+    
+    Parameters:
+        x (float): input value.
+        x_min (float): min value of the input range.
+        x_max (float): max value of the input range.
+        y_min (float): min value of the output range.
+        y_max (float): max value of the output range.
+
+    Returns
+        Re-mapped value (float)
+    '''
+    return y_min + (y_max - y_min) * ((x - x_min) / (x_max - x_min))

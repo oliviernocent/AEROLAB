@@ -8,6 +8,7 @@ USAGE:
 
 ./convert_flow.py user_measures_YYYYMMDD_YYYMMDD.csv user_positions_YYYYMMDD_YYYMMDD.csv
 
+If no file is provided, the script opens a file dialog box.
 '''
 
 __author__     = "Olivier Nocent and Quentin Martinet"
@@ -60,7 +61,7 @@ df.drop(['pm 2.5 (Plume AQI)'], axis=1, inplace=True)
 df.insert(2, 'Period', [''] * len(df.index))
 df.insert(4, 'NO2 (µg/m3)', [0] * len(df.index))
 
-bar = IncrementalBar('Processing ' + path.basename(measures_file), max=len(df.index), suffix='%(percent)d%% - %(elapsed)ds')
+bar = IncrementalBar(f'Processing {path.basename(measures_file)}', max=len(df.index), suffix='%(percent)d%% - %(elapsed)ds')
 for i in df.index:
     # Sets DateTime to ISO 8601 format
     df.loc[i, 'DateTime'] = df.loc[i, 'DateTime'][0:10] + 'T' + df.loc[i, 'DateTime'][11:19]
@@ -86,6 +87,6 @@ for i in df.index:
 bar.finish()
 
 # Saves merged data into a single CSV file
-print('Saving ' + path.basename(measures_file)[0:-4] + '.converted.csv')
-df.to_csv(measures_file[0:-4] + '.converted.csv', sep=',', index=False)
+print(f'Saving {path.basename(measures_file)[0:-4]}.converted.csv')
+df.to_csv(f'{measures_file[0:-4]}.converted.csv', sep=',', index=False)
 

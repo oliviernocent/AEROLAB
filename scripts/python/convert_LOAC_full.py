@@ -6,9 +6,11 @@ Mass concentration of each pollutant are also computed from µg/m3 values.
 
 USAGE:
 
-./LOAC_LOCAL_????????????.mass directory_name
+./convert_loac.py [directory_name]
 
 where directory_name is the path to the MASS data files.
+
+If no directory_name is provided, the script opens a folder dialog box.
 '''
 
 __author__     = "Olivier Nocent and Quentin Martinet"
@@ -19,156 +21,134 @@ __maintainer__ = "Olivier Nocent"
 __email__      = "olivier.nocent@univ-reims.fr"
 __status__     = "Experimental"
 
+from aerolab_utils import *
+from progress.bar import IncrementalBar
+import easygui
+import pandas as pd
+import glob
 import sys
 from os import path
-import glob
-import pandas as pd
-from aerolab_utils import *
 
 if len(sys.argv) == 1:
-    print('\nUSAGE: ./LOAC_LOCAL_????????????.mass. directory_name')
-    print('\nwhere directory_name is the path to the MASS data files.\n\n')
-    exit(0)
-    
-folder_name = sys.argv[1]
-if not path.exists(folder_name):
-    print('\nERROR:', folder_name, 'does not exist!\n\n')
-    exit(0)
+    folder_name = easygui.diropenbox(
+        msg='Choose a LOAC data folder', title='LOAC data converter')
+else:
+    folder_name = sys.argv[1]
+    if not path.exists(folder_name):
+        print('\nERROR:', folder_name, 'does not exist!\n\n')
+        exit(0)
 
-# GPS coordinates integrated in data file
-#latitude = 48.909036
-#longitude = -0.469792
+output_column_name = [
+    'Timestamp',
+    'DateTime',
+    'Date',
+    'Time',
+    'TimeNumeric',
+    'Seconds',
+    'Period',
+    'PM2.5 (µg/m3)',
+    'Error PM2.5 (µg/m3)',
+    'PM10 (µg/m3)',
+    'Error PM10 (µg/m3)'
+]
 
-result = pd.DataFrame({
-    'Year': [],
-    'Month': [],
-    'Day': [],
-    'Hour': [],
-    'Minute': [],
-    'Second': [],
-    'DateTime':[],
-    'Date':[],
-    'Timestamp':[],
-    'TimeNumeric':[],
-    'Period' :[], 
-    'Latitude': [],
-    'Longitude': [],
-    'Temperature (°C)': [],
-    'Humidity (%)': [],
-    'Pressure (hPa)': [],
-    'Mean altitude (m)': [],
-    'Mass PM2.5 (µg/m3)': [],
-    'Mass Error PM2.5 (µg/m3)': [],
-    'Mass PM10 (µg/m3)': [],
-    'Mass Error PM10 (µg/m3)': [],
-})
+input_column_name = [
+    'Year',
+    'Month',
+    'Day',
+    'Hour',
+    'Minute',
+    'Second',
+    'Latitude',
+    'Longitude',
+    'Temperature (°C)',
+    'Humidity (%)',
+    'Pressure (hPa)',
+    'Mean altitude (m)',
+    'PM2.5 (µg/m3)',
+    'Error PM2.5 (µg/m3)',
+    'PM10 (µg/m3)',
+    'Error PM10 (µg/m3)'
+]
 
-for file_name in glob.glob(folder_name + '/LOAC_LOCAL_????????????.mass'):
+input_column_type = {
+    'Year': 'object',
+    'Month': 'object',
+    'Day': 'object',
+    'Hour': 'object',
+    'Minute': 'object',
+    'Second': 'object',
+    'Latitude': 'float64',
+    'Longitude': 'float64',
+    'Temperature (°C)': 'float64',
+    'Humidity (%)': 'float64',
+    'Pressure (hPa)': 'float64',
+    'Mean altitude (m)': 'float64',
+    'PM2.5 (µg/m3)': 'float64',
+    'Error PM2.5 (µg/m3)': 'float64',
+    'PM10 (µg/m3)': 'float64',
+    'Error PM10 (µg/m3)': 'float64'
+}
+
+result = pd.DataFrame([], columns=output_column_name)
+row = 0
+for file_path in glob.glob(folder_name + '/LOAC_LOCAL_????????????.mass'):
+    # Extracts file name form file path
+    file_name = path.basename(file_path)
+
     # Loads file content into a DataFrame
-    df = pd.read_csv(file_name, names=[
-           'Year',
-            'Month',
-            'Day',
-            'Hour',
-            'Minute',
-            'Second',
-            'Latitude (�N)',
-            'Longitude (�E)',
-            'Temperature (�C)',
-            'Humidity (%)',
-            'Pressure (hPa)',
-            'Mean altitude (m)',
-            'Mass PM2.5 (microgrammes m-3)',
-            'Mass Error PM2.5 (microgrammes m-3)',
-            'Mass PM10 (microgrammes m-3)',
-            'Mass Error PM10 (microgrammes m-3)'
-    ])
+    df = pd.read_csv(file_path, names=input_column_name, dtype=input_column_type, encoding='iso-8859-1', sep='\t', skiprows=18, header=None)
 
-    t0 = df.loc[0, 'DateTime']
-    solar_params = get_solar_data(t0, latitude, longitude)
-    # problème comment mettre jour et nuit sachant que l'on dispose d'une latitude et longitude (Period)
-
-    # Inserts new columns
-    #df.insert(0, 'Sensor', [file_name[-6:-4]] * len(df.index))
-    df.insert(6, 'DateTime', [0] * len(df.index))
-    df.insert(7, 'Date', [0] * len(df.index))
-    df.insert(8, 'Timestamp', [0] * len(df.index))
-    df.insert(9, 'TimeNumeric', [0] * len(df.index))
-    df.insert(10, 'Period', df['DateTime'])
+    t0 = df['Year'][0] + '-' + df['Month'][0] + '-' + df['Day'][0] + \
+         'T' + df['Hour'][0] + ':' + df['Minute'][0] + ':' + df['Second'][0]
+    solar_params = get_solar_data(t0, df['Latitude'][0], df['Longitude'][0])
 
     # Parses rows to compute the values of the newly inserted cells
+    bar = IncrementalBar('Processing ' + file_name,
+                         max=len(df.index), suffix='%(percent)d%% - %(elapsed)ds')
     for i in df.index:
-        print('Processing ', file_name, ': ', round(i*100/len(df.index)), '%', sep='', end='\r', flush=True)
-        try:
-            # Extracts HH:MM:SS from the ISO 8601 date string
-            df.loc[i, 'DateTime'] = df.loc[i, 'DateTime'][11:19]
+        # Builds ISO 8601 datetime
+        result.loc[row, 'DateTime'] = df['Year'][i] + '-' + df['Month'][i] + '-' + df['Day'][i] + \
+         'T' + df['Hour'][i] + ':' + df['Minute'][i] + ':' + df['Second'][i]
+
+        # Computes timestamp: seconds elapsed time since 01/01/1970
+        result.loc[row, 'Timestamp'] = int(datetime.timestamp(
+            datetime.fromisoformat(result.loc[row, 'DateTime'])))
+
+        # Extracts YYY-MM-DD from the ISO 8601 date string
+        result.loc[i, 'Date'] = result.loc[i, 'DateTime'][0:10]
+
+        # Extracts HH:MM:SS from the ISO 8601 date string
+        result.loc[i, 'Time'] = result.loc[i, 'DateTime'][11:19]
+
+        # Converts the 'Time' string into a float value (seconds are ignored)
+        result.loc[i, 'TimeNumeric'] = int(
+            result.loc[i, 'DateTime'][11:13]) + float(result.loc[i, 'DateTime'][14:16])/60
+
+        # Computes elapsed time (in seconds) since the session start
+        result.loc[i, 'Seconds'] = compute_duration(result.loc[0, 'DateTime'], result.loc[i, 'DateTime'])
+
+        # Sets the period (day/night) according to the solar sunrise and sunset hours
+        current_time = time.fromisoformat(result.loc[row, 'DateTime'][11:19])
+        if current_time >= solar_params['sunrise'] and current_time < solar_params['sunset']:
+            result.loc[row, 'Period'] = 'Day'
+        else:
+            result.loc[row, 'Period'] = 'Night'
             
-            # Extracts YYY-MM-DD from the ISO 8601 date string
-            df.loc[i, 'Date'] = df.loc[i, 'DateTime'][0:10]
-           
-            # Computes timestamp : seconds elapsed time since 01/01/1970
-            df.loc[i, 'Timestamp'] = int(datetime.timestamp(datetime.fromisoformat(df.loc[i, 'DateTime'])))
+        result.loc[row, 'PM2.5 (µg/m3)'] = df['PM2.5 (µg/m3)'][i]
+        result.loc[row, 'Error PM2.5 (µg/m3)'] = df['Error PM2.5 (µg/m3)'][i]
+        result.loc[row, 'PM10 (µg/m3)'] = df['PM10 (µg/m3)'][i]
+        result.loc[row, 'Error PM10 (µg/m3)'] = df['Error PM10 (µg/m3)'][i]
 
-            # Converts the 'Time' string into a float value (seconds are ignored)
-            df.loc[i, 'TimeNumeric'] = int(
-                df.loc[i, 'DateTime'][11:13]) + float(df.loc[i, 'DateTime'][14:16])/60
+        row += 1
+        
+        bar.next()
+    bar.finish()
 
-            # Sets the period (day/night) according to the solar sunrise and sunset hours
-            current_time = time.fromisoformat(df.loc[i, 'DateTime'][11:19])
-            if current_time >= solar_params['sunrise'] and current_time < solar_params['sunset']:
-                df.loc[i, 'Period'] = 'D'
-            else:
-                df.loc[i, 'Period'] = 'N'
-
-            # Checks if each numeric cell contains a float value
-            df.loc[i, 'Latitude'] = float(df.loc[i, 'Latitude'])
-            df.loc[i, 'Longitude'] = float(df.loc[i, 'Longitude'])
-            df.loc[i, 'Temperature (°C)'] = float(df.loc[i, 'Temperature (°C)'])
-            df.loc[i, 'Humidity (%)'] = float(df.loc[i, 'Humidity (%)'])
-            df.loc[i, 'Pressure (hPa)'] = float(df.loc[i, 'Pressure (hPa)'])
-            df.loc[i, 'Mass PM2.5 (µg/m3)'] = float(df.loc[i, 'Mass PM2.5 (µg/m3)'])
-            df.loc[i, 'Mass Error PM2.5 (µg/m3)'] = float(df.loc[i, 'Mass Error PM2.5 (µg/m3)'])
-            df.loc[i, 'Mass PM10 (µg/m3)'] = float(df.loc[i, 'Mass PM10 (µg/m3)'])
-            df.loc[i, 'Mass Error PM10 (µg/m3)'] = float(df.loc[i, 'Mass Error PM10 (µg/m3)'])
-
-
-            # Computes mass concentrations
-            if df.loc[i, 'Mass PM2.5 (µg/m3)'] < 0:
-                df.loc[i, 'Mass PM2.5 (µg/m3)'] = None
-            else:
-                df.loc[i, 'Mass PM2.5 (µg/m3)']
-
-            if df.loc[i, 'Mass Error PM2.5 (µg/m3)'] < 0:
-                df.loc[i, 'Mass Error PM2.5 (µg/m3)'] = None
-            else:
-                df.loc[i, 'Mass Error PM2.5 (µg/m3)'] 
-            
-            if df.loc[i, 'Mass PM10 (µg/m3)'] < 0:
-                df.loc[i, 'Mass PM10 (µg/m3)'] = None
-            else:
-                df.loc[i, 'Mass PM10 (µg/m3)'] 
-
-            if df.loc[i, 'Mass Error PM10 (µg/m3)'] < 0:
-                df.loc[i, 'Mass Error PM10 (µg/m3)'] = None
-            else:
-                df.loc[i, 'Mass Error PM10 (µg/m3)'] 
-
-
-        except ValueError as err:
-            print('ERROR in line', i+1, 'of file', file_name, flush=True)
-            print(err, flush=True)
-            exit()
-
-    # Saves current data into a CSV file
-    df.to_csv(file_name[0:-23] + '_full.csv', sep=',', index=False)
-
-    # Merges current data with the previously processed one
-    result = pd.concat([result, df], ignore_index=True, sort=False)
-
-    # Flushes stdout
-    print('', end='\n', flush=True)
+# Sorts DataFrame according DateTime
+result.sort_values(by='DateTime', ignore_index=True, inplace=True)
 
 # Saves merged data into a single CSV file
-print('Saving ' + file_name[0:-23] + '_full.csv')
-result.to_csv(file_name[0:-23] + '_full.csv', sep=',', index=False)
-
+output_filename = f"LOAC_{result['DateTime'].iloc[0][:10]}_{result['DateTime'].iloc[-1][:10]}_full.csv"
+print(f'Saving {output_filename}')
+result.to_csv(f'{folder_name}/{output_filename}', sep=',', index=False)

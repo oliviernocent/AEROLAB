@@ -6,18 +6,20 @@ Mass concentration of each pollutant are also computed from ppm values.
 
 USAGE:
 
-./convert_aqt530.py directory_name
+./convert_aqt530.py [directory_name]
 
 where directory_name is the path to the TXT data files.
+
+If no directory_name is provided, the script opens a folder dialog box.
 '''
 
-__author__ = "Olivier Nocent and Quentin Martinet"
-__copyright__ = "Copyright 2021, Université de Reims Champagne Ardenne"
-__license__ = "MIT"
-__version__ = "0.0.1"
+__author__     = "Olivier Nocent and Quentin Martinet"
+__copyright__  = "Copyright 2021, Université de Reims Champagne Ardenne"
+__license__    = "MIT"
+__version__    = "0.0.1"
 __maintainer__ = "Olivier Nocent"
-__email__ = "olivier.nocent@univ-reims.fr"
-__status__ = "Experimental"
+__email__      = "olivier.nocent@univ-reims.fr"
+__status__     = "Experimental"
 
 from aerolab_utils import *
 from progress.bar import IncrementalBar
@@ -36,7 +38,7 @@ else:
         print('\nERROR:', folder_name, 'does not exist!\n\n')
         exit(0)
 
-# NOTE: in a future release, GPS coordinates will be integrated in data file
+# NOTE: in a future release, GPS coordinates will be integrated in data files
 latitude = 48.909036
 longitude = -0.469792
 
@@ -97,7 +99,7 @@ input_column_type = {
 result = pd.DataFrame([], columns=output_column_name)
 
 
-for file_path in glob.glob(folder_name + '/DATA_??.TXT'):
+for file_path in glob.glob(f'{folder_name}/DATA_*.TXT'):
     # Extracts file name form file path
     file_name = path.basename(file_path)
 
@@ -120,7 +122,7 @@ for file_path in glob.glob(folder_name + '/DATA_??.TXT'):
     df.drop(['C'], axis=1, inplace=True)
 
     # Inserts new columns
-    df.insert(0, 'Sensor', ['AQT530_' + file_name[-6:-4]] * len(df.index))
+    df.insert(0, 'Sensor', [f'AQT530_{file_name[5:-4]}'] * len(df.index))
     df.insert(2, 'Timestamp', [0] * len(df.index))
     df.insert(3, 'Period', df['DateTime'])
     df.insert(8, 'NO2 (µg/m3)', [0] * len(df.index))
@@ -129,7 +131,7 @@ for file_path in glob.glob(folder_name + '/DATA_??.TXT'):
     df.insert(14, 'NO (µg/m3)', [0] * len(df.index))
 
     # Parses rows to compute the values of the newly inserted cells
-    bar = IncrementalBar('Processing ' + file_name,
+    bar = IncrementalBar(f'Processing {file_name}',
                          max=len(df.index), suffix='%(percent)d%% - %(elapsed)ds')
     for i in df.index:
         # Computes timestamp : seconds elapsed time since 01/01/1970
@@ -184,11 +186,12 @@ for file_path in glob.glob(folder_name + '/DATA_??.TXT'):
     bar.finish()
 
     # Saves current data into a CSV file
-    df.to_csv(file_path[0:-3] + 'csv', sep=',', index=False)
+    print(f'Saving {file_name[0:-3]}csv')
+    df.to_csv(f'{file_path[0:-3]}csv', sep=',', index=False)
 
     # Merges current data with the previously processed one
     result = pd.concat([result, df], ignore_index=True, sort=False)
 
 # Saves merged data into a single CSV file
-print('Saving ' + file_name[0:-7] + '.csv')
-result.to_csv(file_path[0:-7] + '.csv', sep=',', index=False)
+print('Saving DATA.csv')
+result.to_csv(f'{folder_name}/DATA.csv', sep=',', index=False)

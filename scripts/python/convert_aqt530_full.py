@@ -9,6 +9,8 @@ USAGE:
 ./convert_aqt530.py directory_name
 
 where directory_name is the path to the TXT data files.
+
+If no directory_name is provided, the script opens a folder dialog box.
 '''
 
 __author__     = "Olivier Nocent and Quentin Martinet"
@@ -100,10 +102,7 @@ input_column_type = {
 
 result = pd.DataFrame([], columns=output_column_name)
 
-folder_name = easygui.diropenbox(
-    msg='Choose a AQT530 data folder', title='AQT530 data converter')
-
-for file_path in glob.glob(folder_name + '/DATA_??.TXT'):
+for file_path in glob.glob(f'{folder_name}/DATA_*.TXT'):
     # Extracts file name form file path
     file_name = path.basename(file_path)
 
@@ -126,7 +125,7 @@ for file_path in glob.glob(folder_name + '/DATA_??.TXT'):
     df.drop(['C'], axis=1, inplace=True)
 
     # Inserts new columns
-    df.insert(0, 'Sensor', ['AQT530_' + file_name[-6:-4]] * len(df.index))
+    df.insert(0, 'Sensor', [f'AQT530_{file_name[5:-4]}'] * len(df.index))
     df.insert(1, 'Timestamp', [0] * len(df.index))
     df.insert(3, 'Date', [0] * len(df.index))
     df.insert(4, 'Time', [0] * len(df.index))
@@ -139,7 +138,7 @@ for file_path in glob.glob(folder_name + '/DATA_??.TXT'):
     df.insert(18, 'NO (µg/m3)', [0] * len(df.index))
 
     # Parses rows to compute the values of the newly inserted cells
-    bar = IncrementalBar('Processing ' + file_name,
+    bar = IncrementalBar(f'Processing {file_name}',
                          max=len(df.index), suffix='%(percent)d%% - %(elapsed)ds')
     for i in df.index:
         # Computes timestamp : seconds elapsed time since 01/01/1970
@@ -203,12 +202,13 @@ for file_path in glob.glob(folder_name + '/DATA_??.TXT'):
     bar.finish()
 
     # Saves current data into a CSV file
-    df.to_csv(file_path[0:-4] + '_full.csv', sep=',', index=False)
+    print(f'Saving {file_name[0:-4]}_full.csv')
+    df.to_csv(f'{file_path[0:-4]}_full.csv', sep=',', index=False)
 
     # Merges current data with the previously processed one
     result = pd.concat([result, df], ignore_index=True, sort=False)
 
 # Saves merged data into a single CSV file
-print('Saving ' + file_name[0:-7] + '_full.csv')
-result.to_csv(file_path[0:-7] + '_full.csv', sep=',', index=False)
+print('Saving DATA_full.csv')
+result.to_csv(f'{folder_name}/DATA_full.csv', sep=',', index=False)
 

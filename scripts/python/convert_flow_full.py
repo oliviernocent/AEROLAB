@@ -6,8 +6,9 @@ Mass concentration of each pollutant are also computed from ppm values.
 
 USAGE:
 
-./convert_flow.py user_measures_YYYYMMDD_YYYMMDD.csv
+./convert_flow_full.py user_measures_YYYYMMDD_YYYMMDD.csv user_positions_YYYYMMDD_YYYMMDD.csv
 
+If no file is provided, the script opens a file dialog box.
 '''
 
 __author__     = "Olivier Nocent and Quentin Martinet"
@@ -103,6 +104,6 @@ for i in df.index:
 bar.finish()
 
 # Saves merged data into a single CSV file
-print('Saving ' + measures_file[0:-4] + '.converted_full.csv')
-df.to_csv(measures_file[0:-4] + '.converted_full.csv', sep=',', index=False)
+print(f'Saving {path.basename(measures_file)[0:-4]}.converted_full.csv')
+df.to_csv(f'{measures_file[0:-4]}.converted_full.csv', sep=',', index=False)
 

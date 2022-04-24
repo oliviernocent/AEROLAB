@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 This script computes the max mean mass concentration of several pollutants
-from CSV a file containing the following columns :
+from a CSV file containing the following columns:
     - 'DateTime' : ISO 8601 date and time 
     - 'Timestamp': seconds elapsed since 01/01/1970
     - 'PM10 (µg/m3)' (optional)
@@ -11,15 +11,21 @@ from CSV a file containing the following columns :
     - 'NO2 (µg/m3)' (optional)
     - 'CO (mg/m3)'  (optional)
     - 'O3 (µg/m3)'  (optional)
+
+USAGE:
+
+./exposure.py [csv_file]
+
+If no csv_file is provided, the script opens a file dialog box.
 '''
 
-__author__ = "Olivier Nocent and Quentin Martinet"
-__copyright__ = "Copyright 2021, Université de Reims Champagne Ardenne"
-__license__ = "MIT"
-__version__ = "0.0.1"
+__author__     = "Olivier Nocent and Quentin Martinet"
+__copyright__  = "Copyright 2021, Université de Reims Champagne Ardenne"
+__license__    = "MIT"
+__version__    = "0.0.1"
 __maintainer__ = "Olivier Nocent"
-__email__ = "olivier.nocent@univ-reims.fr"
-__status__ = "Experimental"
+__email__      = "olivier.nocent@univ-reims.fr"
+__status__     = "Experimental"
 
 from os import path
 import sys
@@ -88,33 +94,18 @@ if 'O3 (µg/m3)' in df.columns:
 
 print('\nMaximum mean mass concentration during 24h:\n')
 if 'PM10 (µg/m3)' in df.columns:
-    print('PM10  :', round(max_value['PM10 (µg/m3)'], 3),
-          'µg/m3\t\t(45 µg/m3) at', df['DateTime'][max_index['PM10 (µg/m3)']])
+    print(f"PM10  : {max_value['PM10 (µg/m3)']: >6.2f} µg/m3\t\t(45 µg/m3) at {df['DateTime'][max_index['PM10 (µg/m3)']]}")
 if 'PM2.5 (µg/m3)' in df.columns:
-    print('PM2.5 :', round(max_value['PM2.5 (µg/m3)'], 3),
-          'µg/m3\t\t(15 µg/m3) at', df['DateTime'][max_index['PM2.5 (µg/m3)']])
+    print(f"PM2.5 : {max_value['PM2.5 (µg/m3)']: >6.2f} µg/m3\t\t(15 µg/m3) at {df['DateTime'][max_index['PM2.5 (µg/m3)']]}")
 if 'PM1 (µg/m3)' in df.columns:
-    print('PM1   :', round(max_value['PM1 (µg/m3)'], 3),
-          'µg/m3\t\t( ? µg/m3) at', df['DateTime'][max_index['PM1 (µg/m3)']])
+    print(f"PM1   :' {max_value['PM1 (µg/m3)']: >6.2f} µg/m3\t\t( ? µg/m3) at {df['DateTime'][max_index['PM1 (µg/m3)']]}")
 if 'NO2 (µg/m3)' in df.columns:
-    print('NO2   :', round(max_value['NO2 (µg/m3)'], 3),
-          'µg/m3\t\t(25 µg/m3) at', df['DateTime'][max_index['NO2 (µg/m3)']])
+    print(f"NO2   : {max_value['NO2 (µg/m3)']: >6.2f} µg/m3\t\t(25 µg/m3) at {df['DateTime'][max_index['NO2 (µg/m3)']]}")
 if 'CO (mg/m3)' in df.columns:
-    print('CO    :', round(max_value['CO (mg/m3)'], 3),
-          'mg/m3\t\t( 4 mg/m3) at', df['DateTime'][max_index['CO (mg/m3)']])
+    print(f"CO    : {max_value['CO (mg/m3)']: >6.2f} mg/m3\t\t( 4 mg/m3) at {df['DateTime'][max_index['CO (mg/m3)']]}")
 if 'O3 (µg/m3)' in df.columns:
     print('\nMaximum mean mass concentration during 8h:\n')
-    print('O3    :', round(max_value['O3 (µg/m3)'], 3),
-          'µg/m3\t\t(100 µg/m3) at', df['DateTime'][max_index['O3 (µg/m3)']])
-
-threshold = {
-    'PM10 (µg/m3)': 45,
-    'PM2.5 (µg/m3)': 15,
-    'PM1 (µg/m3)': 15,
-    'NO2 (µg/m3)': 25,
-    'CO (mg/m3)': 4,
-    'O3 (µg/m3)': 100
-}
+    print(f"O3    : {max_value['O3 (µg/m3)']: >6.2f} µg/m3\t\t(100 µg/m3) at {df['DateTime'][max_index['O3 (µg/m3)']]}")
 
 period = {
     'PM10 (µg/m3)': 0,
@@ -131,11 +122,8 @@ for i in range(1,len(df.index)):
             period[pollutant] += df['Timestamp'][i] - df['Timestamp'][i-1]
 
 total = df['Timestamp'][len(df.index)-1] - df['Timestamp'][0]
-if total > 60 * 60 * 24:
-    days  = total // (60 * 60 * 24)
-    hours = (total % (60 * 60 * 24)) // (60 * 60)
-    total = str(days) + ' days and ' + str(hours) + ' hours' 
-print('\nTotal time above thresholds during ' + total + ' seconds:\n')
+
+print(f'\nTotal time above thresholds during {format_duration(total)}:\n')
 for pollutant in pollutants:
     if pollutant in df.columns:
-        print(pollutant + ': ' + str(period[pollutant]) + 's')
+        print(f'{pollutant} : {format_duration(period[pollutant])}')
