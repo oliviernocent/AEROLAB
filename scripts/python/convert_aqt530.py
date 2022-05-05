@@ -39,8 +39,8 @@ else:
         exit(0)
 
 # NOTE: in a future release, GPS coordinates will be integrated in data files
-latitude = 48.909036
-longitude = -0.469792
+latitude = 42.242580
+longitude = 4.067757
 
 output_column_name = [
     'Sensor',
