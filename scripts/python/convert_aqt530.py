@@ -109,7 +109,7 @@ for file_path in glob.glob(f'{folder_name}/DATA_*.TXT'):
 
     t0 = df.loc[0, 'DateTime']
     solar_params = get_solar_data(t0, latitude, longitude)
-
+'''
     # Removes data where time interval is less than 10 minutes
     for i in df.index:
         if compute_duration(t0, df.loc[i, 'DateTime']) < 600:
@@ -117,7 +117,7 @@ for file_path in glob.glob(f'{folder_name}/DATA_*.TXT'):
         else:
             t0 = df.loc[i, 'DateTime']
     df.reset_index(drop=True, inplace=True)
-
+'''
     # Removes the column named 'C'
     df.drop(['C'], axis=1, inplace=True)
 
