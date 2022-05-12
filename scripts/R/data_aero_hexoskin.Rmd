@@ -129,7 +129,7 @@ Pression (hPa)
 # DATA
 
 ```{r donnees, echo=FALSE}
-donnees <- read.table( file = "../../data/2021-11-11/AQT530/DATA_full.csv", dec = '.', sep = ',', head = TRUE, fileEncoding="UTF-8" ) 
+donnees <- read.table( file = "../../data/2022-03-30/HX_44957/record-242630.csv", dec = '.', sep = ',', head = TRUE, fileEncoding="UTF-8" ) 
 # option pour l'anova
 options(contrasts=c("contr.sum","contr.poly"))
 
