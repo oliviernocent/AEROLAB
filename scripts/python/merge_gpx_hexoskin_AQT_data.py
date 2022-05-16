@@ -40,35 +40,14 @@ else:
         print('\nERROR:', AQT530_file, 'does not exist!\n\n')
         exit(0)
 
-# Loads GPX data
-content = open(merge_file)
-soup = BeautifulSoup(content, 'lxml')
 
-# Retrieves time offset (seconds) according to time zone
-date_string = soup.select_one('time').string[:19]
-latitude = soup.select_one('trkpt')['lat']
-longitude = soup.select_one('trkpt')['lon']
 
-time_offset = get_time_offset(date_string, latitude, longitude)
 
-# Parses geo data
-data = []
-for trackpoint in soup.select('trkpt'):
-    # Applies time offset to each date
-    date_string = trackpoint.select_one('time').string[:19]
-    timestamp = datetime.fromisoformat(date_string).timestamp() + time_offset
-    date_string = datetime.fromtimestamp(timestamp).isoformat()
+    # Loads file content into a DataFrame
+    df = pd.read_csv(file_path, names=input_column_name,
+                     dtype=input_column_type)
 
-    data.append({
-        'Timestamp': int(timestamp),
-        'DateTime':  date_string,
-        'Latitude':  float(trackpoint['lat']),
-        'Longitude': float(trackpoint['lon']),
-        'Altitude':  trackpoint.select_one('ele').string,
-        'Cadence':   trackpoint.select_one('ns3\:cad').string
-    })
-
-df_geo = pd.DataFrame(data)
+    t0 = df.loc[0, 'DateTime']
 
 
 # Parses air quality data
